@@ -74,6 +74,8 @@ export type HandConfig = {
 }
 
 export function createRound({players, dealer, shuffler = standardShuffler, cardsPerPlayer = 7 }: HandConfig): Round {
+  if (players.length < Round.MIN_PLAYERS) throw new Error('At least 2 players required');
+  if (players.length > Round.MAX_PLAYERS) throw new Error('At most 10 players allowed');
   let round = new Round();
   round.players = players;
   round.dealer = dealer;
