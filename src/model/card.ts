@@ -29,8 +29,8 @@ type WildDrawCard = {
 
 type Card = NumberedCard | SkipCard | ReverseCard | DrawCard | WildCard | WildDrawCard
 
-const Colors = ['RED', 'GREEN', 'BLUE', 'YELLOW'] as const
+const colors = ['RED', 'GREEN', 'BLUE', 'YELLOW'] as const
 
-type Color = (typeof Colors)[number]
+type Color = (typeof colors)[number]
 
-export { type Card, Colors, type NumberedCard, type SkipCard, type ReverseCard, type DrawCard, type WildCard, type WildDrawCard }
+export { type Card, type Color, colors, type NumberedCard, type SkipCard, type ReverseCard, type DrawCard, type WildCard, type WildDrawCard }

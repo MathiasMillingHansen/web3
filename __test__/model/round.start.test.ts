@@ -59,12 +59,12 @@ describe("Round set up", () => {
     expect(round.playerHand(0)).toBe(round.playerHand(0))
   })
   it("creates a discard pile with the top card", () => {
-    const undealtCards = cards.slice(dealtCardsCount)  
+    const undealtCards = cards.slice(dealtCardsCount)
     expect(round.discardPile().size).toEqual(1)
-    expect(round.discardPile().top()).toEqual(undealtCards[0])  
+    expect(round.discardPile().top()).toEqual(undealtCards[0])
   })
   it("keeps the undealt cards in the draw pile", () => {
-    const undealtCards = cards.slice(dealtCardsCount)    
+    const undealtCards = cards.slice(dealtCardsCount)
     for(let i = 1; i < undealtCards.length; i++) {
       expect(round.drawPile().deal()).toEqual(undealtCards[i])
     }

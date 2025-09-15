@@ -119,8 +119,8 @@ describe("Deck methods", () => {
       }
     })
     it("returns undefined if the deck is empty", () => {
-      while(deck.size > 0) { 
-        deck.deal() 
+      while(deck.size > 0) {
+        deck.deal()
       }
       expect(deck.deal()).toBeUndefined()
     })
@@ -143,7 +143,7 @@ describe('fromMemento', () => {
       expect(card.type).toEqual('NUMBERED')
       expect(deck.hasColor(card, 'BLUE')).toBeTruthy()
       expect(deck.hasNumber(card, 7)).toBeTruthy()
-      
+
       card = created.deal()!
       expect(card.type).toEqual('SKIP')
       expect(deck.hasColor(card, 'RED')).toBeTruthy()
