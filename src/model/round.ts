@@ -4,7 +4,31 @@ import { Deck } from "./deck";
 import { Hand } from "./hand";
 
 
+
 class Round {
+
+    sayUno(playerIndex: number): boolean {
+        const hand = this.playerHand(playerIndex);
+        if (hand.size === 1) {
+            this.unoDeclared[playerIndex] = true;
+            return true;
+        }
+        return false;
+    }
+
+    catchUno(targetPlayerIndex: number): boolean {
+        const hand = this.playerHand(targetPlayerIndex);
+        if (hand.size === 1 && !this.unoDeclared[targetPlayerIndex]) {
+            for (let i = 0; i < 2; i++) {
+                const card = this.deck.deal();
+                if (card) hand.add(card);
+            }
+            this.unoDeclared[targetPlayerIndex] = false;
+            return true;
+        }
+        return false;
+    }
+    private unoDeclared: boolean[] = [];
 
 
 
@@ -39,6 +63,7 @@ class Round {
         this.players = [...playerNames];
         this.deck = deck;
         this.hands = this.players.map(() => new Hand());
+        this.unoDeclared = this.players.map(() => false);
         for (let i = 0; i < handSize; i++) {
             for (let h of this.hands) {
                 const card = this.deck.deal();
@@ -54,6 +79,15 @@ class Round {
         this.discardPile = [firstCard];
         this.currentPlayer = (this.dealer + 1) % this.players.length;
         this.direction = 1;
+    }
+
+    needsToSayUno(playerIndex: number): boolean {
+        const hand = this.playerHand(playerIndex);
+        return hand.size === 1 && !this.unoDeclared[playerIndex];
+    }
+
+    hasDeclaredUno(playerIndex: number): boolean {
+        return this.unoDeclared[playerIndex];
     }
 
 
@@ -121,13 +155,15 @@ class Round {
         if (!hand.remove(card)) return false;
         this.discardPile.push(card);
         this.handleCardEffect(card);
+        if (hand.size !== 1) {
+            this.unoDeclared[this.currentPlayer] = false;
+        }
         this.nextPlayer();
         return true;
     }
 
     playCard(card: Card): boolean {
         const hand = this.hands[this.currentPlayer];
-        // For wilds, require chosenColor to be set
         if ((card.type === 'WILD' || card.type === 'WILD DRAW') && !(card as any).chosenColor) {
             throw new Error('Must set chosenColor on wild cards before playing');
         }
@@ -135,6 +171,9 @@ class Round {
         if (!hand.remove(card)) return false;
         this.discardPile.push(card);
         this.handleCardEffect(card);
+        if (hand.size !== 1) {
+            this.unoDeclared[this.currentPlayer] = false;
+        }
         this.nextPlayer();
         return true;
     }
