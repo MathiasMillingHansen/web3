@@ -33,4 +33,6 @@ const colors = ['RED', 'GREEN', 'BLUE', 'YELLOW'] as const
 
 type Color = (typeof colors)[number]
 
+type TypedCard<T extends Card['type']> = Extract<Card, { type: T }>;
+
 export { type Card, type Color, colors, type NumberedCard, type SkipCard, type ReverseCard, type DrawCard, type WildCard, type WildDrawCard }

@@ -13,14 +13,14 @@ function constrainedShuffler(...constraints: [number, CardPredicate][]): Shuffle
       let [_, predicate] = constraints[i]
       const foundIndex = cards.findIndex(predicate)
       if (foundIndex === -1) throw new Error('Unsatisfiable predicate')
-      foundCards.push(cards[foundIndex])    
+      foundCards.push(cards[foundIndex])
       cards.splice(foundIndex, 1)
-    }  
+    }
     for(let i = 0; i < constraints.length; i++) {
       let [index] = constraints[i]
       cards.splice(index, 0, foundCards[i])
-    }  
-  }  
+    }
+  }
 }
 
 export function memoizingShuffler(shuffler: Shuffler<Card>): {readonly shuffler: Shuffler<Card>, readonly memo: Readonly<Card[]>} {
@@ -40,15 +40,15 @@ export function successiveShufflers(...shufflers: Shuffler<Card>[]): Shuffler<Ca
     shuffler(cards)
     if (index < shufflers.length - 1) index++
     shuffler = shufflers[index]
-  }  
+  }
 }
 
 export function createRoundWithShuffledCards(props: Partial<HandConfig>): [Round, Readonly<Card[]>] {
   const shuffler = props.shuffler ?? standardShuffler
   let memoShuffler = memoizingShuffler(shuffler)
   const hand = createRound({
-    players: props.players ?? ['a', 'b', 'c', 'd'], 
-    dealer: props.dealer ?? 1, 
+    players: props.players ?? ['a', 'b', 'c', 'd'],
+    dealer: props.dealer ?? 1,
     shuffler: memoShuffler.shuffler})
   return [hand, memoShuffler.memo]
 }

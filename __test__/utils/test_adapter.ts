@@ -79,6 +79,7 @@ export function createRound({players, dealer, shuffler = standardShuffler, cards
   let round = new Round();
   round.players = players;
   round.dealer = dealer;
+  round.deck.shuffle(shuffler);
   return round;
 }
 
