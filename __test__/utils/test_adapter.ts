@@ -4,6 +4,7 @@ import { Deck } from '../../src/model/deck'
 import { type Color } from '../../src/model/card'
 import { colors } from '../../src/model/card'
 import { Round } from '../../src/model/round'
+import { Hand } from '../../src/model/hand'
 
 // Fix (or import) these types:
 type Game = any
@@ -79,7 +80,19 @@ export function createRound({players, dealer, shuffler = standardShuffler, cards
   let round = new Round();
   round.players = players;
   round.dealer = dealer;
+  round.deck = createInitialDeck(); // Always use a fresh, full deck
   round.deck.shuffle(shuffler);
+  round.hands = players.map(() => new Hand());
+  for (let i = 0; i < cardsPerPlayer; i++) {
+    for (let h of round.hands) {
+      const card = round.deck.deal();
+      if (card) h.add(card);
+    }
+  }
+  // Set up discard pile with the next card from the deck
+  const firstCard = round.deck.deal();
+  if (!firstCard) throw new Error('Deck exhausted before starting');
+  round.discardPile = [firstCard];
   return round;
 }
 
