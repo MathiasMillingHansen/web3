@@ -1,0 +1,14 @@
+.h1 {
+    color: #f30000;
+    text-align: center;
+    margin: 0;
+    font-size: 3rem;
+}
+
+.header_container {
+    height: 10vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

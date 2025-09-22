@@ -4,14 +4,17 @@
   "description": "Uno",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "keywords": [
     "uno",
     "oo",
     "functional"
   ],
-  "author": "Ole Ildsgaard Hougaard",
+  "author": "Mathias Og Rune",
   "license": "ISC",
   "dependencies": {
     "@babel/core": "^7.24.6",
@@ -20,9 +23,13 @@
     "babel-jest": "^29.7.0",
     "jest": "^29.7.0",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "@vitejs/plugin-vue": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "vite": "^7.1.7"
   }
 }
