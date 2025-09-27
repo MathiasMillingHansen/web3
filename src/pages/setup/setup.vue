@@ -3,7 +3,8 @@
     <div v-if="showModal" :class="styles.modal_overlay">
         <div :class="styles.modal">
             <h2>Enter your name</h2>
-            <input v-model="usernameInput" :class="styles.modal_input" placeholder="Your name" @keyup.enter="submitName" />
+            <input v-model="usernameInput" :class="styles.modal_input" placeholder="Your name"
+                @keyup.enter="submitName" />
             <button :class="styles.modal_button" @click="submitName">OK</button>
         </div>
     </div>
@@ -31,6 +32,14 @@
 
     </div>
 
+    <div :class="styles.start_button_container">
+        <router-link :to="'/game'" custom v-slot="{ navigate, href }">
+            <button :class="styles.start_button" :href="href" @click="navigate" :disabled="players[0] == null">
+                <h2 :class="styles.h2">START GAME</h2>
+            </button>
+        </router-link>
+    </div>
+
 </template>
 
 <script setup>
@@ -52,9 +61,9 @@ function submitName() {
 
 watch(players, (newPlayers) => {
     console.log(players.value);
-  if (newPlayers[0] == null) {
-    showModal.value = true;
-  }
+    if (newPlayers[0] == null) {
+        showModal.value = true;
+    }
 }, { deep: true });
 
 function addPlayer(index) {

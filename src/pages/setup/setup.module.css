@@ -8,11 +8,11 @@
 }
 
 .setup_header h1 {
-    margin: 0;
+    margin: 10vh;
 }
 
 .setup_body {
-    height: 90vh;
+    height: 50vh;
     width: 100vw;
     display: flex;
     justify-content: space-evenly;
@@ -128,4 +128,25 @@
 
 .modal_button:hover {
     background: linear-gradient(135deg, #ff4b2b 0%, #ff416c 100%);
+}
+
+.start_button_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 15vh;
+    width: 100vw;
+}
+
+.start_button {
+    width: 20vw;
+    height: 10vh;
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 1.5px 4px rgba(255, 75, 43, 0.15);
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(.4, 2, .6, 1), box-shadow 0.2s, background 0.3s;
+    outline: none;
 }
