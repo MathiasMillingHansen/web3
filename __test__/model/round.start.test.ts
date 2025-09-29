@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { createRound} from '../utils/test_adapter'
-import { Card } from '../../src/model/deck'
-import { Round } from '../../src/model/round'
+import { Card } from '../../server/src/models/deck'
+import { Round } from '../../server/src/models/round'
 import { createRoundWithShuffledCards as createRoundWithShuffledCards, shuffleBuilder, successiveShufflers } from '../utils/shuffling'
 
 const normalShuffle = shuffleBuilder()

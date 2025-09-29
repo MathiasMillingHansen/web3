@@ -1,0 +1,174 @@
+.game_container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+}
+
+.deck_area {
+    width: 30%;
+    height: 50%;
+    background-color: #ffffff;
+    border: 2px solid #ccc;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.draw_button {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.draw_button:hover:not(:disabled) {
+    transform: scale(1.05);
+}
+
+.draw_button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loading, .error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 50vh;
+    color: #333;
+}
+
+.game_status {
+    width: 80%;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.players_list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.player_status {
+    padding: 0.5rem;
+    background: #e9ecef;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.current_player {
+    background: #d4edda;
+    border: 2px solid #28a745;
+    font-weight: bold;
+}
+
+.deck {
+    width: 4vw;
+    height: 12vh;
+    color: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+    padding: 4px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.player_area {
+    width: 80%;
+    height: 20%;
+    background-color: #ffffff;
+    border: 2px solid #ccc;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1rem;
+}
+
+.cards_container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.card {
+    width: 4vw;
+    height: 12vh;
+    color: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-align: center;
+    padding: 4px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), -1px -1px 2px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+}
+
+.card_red {
+    background: #e53e3e;
+}
+
+.card_blue {
+    background: #3182ce;
+}
+
+.card_green {
+    background: #38a169;
+}
+
+.card_yellow {
+    background: #d69e2e;
+}
+
+.card_wild {
+    background: linear-gradient(45deg, #e53e3e 25%, #3182ce 25%, #3182ce 50%, #38a169 50%, #38a169 75%, #d69e2e 75%);
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.card_default {
+    background: #718096;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

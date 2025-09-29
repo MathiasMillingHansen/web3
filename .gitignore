@@ -2,3 +2,4 @@
 /.env
 /.DS_Store
 /.github
+/server/node_modules

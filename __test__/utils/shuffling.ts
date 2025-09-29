@@ -1,5 +1,5 @@
-import { Card } from "../../src/model/deck"
-import { Round } from "../../src/model/round"
+import { Card } from "../../server/src/models/card"
+import { Round } from "../../server/src/models/round"
 import { Shuffler, standardShuffler } from "../../src/utils/random_utils"
 import { CardPredicate, CardSpec, is, not } from "./predicates"
 import { HandConfig, createRound } from "./test_adapter"

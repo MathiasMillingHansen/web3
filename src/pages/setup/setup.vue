@@ -33,11 +33,18 @@
     </div>
 
     <div :class="styles.start_button_container">
-        <router-link :to="'/game'" custom v-slot="{ navigate, href }">
-            <button :class="styles.start_button" :href="href" @click="navigate" :disabled="players[0] == null">
-                <h2 :class="styles.h2">START GAME</h2>
-            </button>
-        </router-link>
+        <button 
+            :class="styles.start_button" 
+            @click="startGame" 
+            :disabled="players[0] == null || creatingGame"
+        >
+            <h2 :class="styles.h2">
+                {{ creatingGame ? 'CREATING GAME...' : 'START GAME' }}
+            </h2>
+        </button>
+        <div v-if="createGameError" style="color: red; margin-top: 10px;">
+            Error: {{ createGameError.message }}
+        </div>
     </div>
 
 </template>
@@ -45,12 +52,19 @@
 <script setup>
 import styles from './setup.module.css';
 import { ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { useMutation } from '@vue/apollo-composable';
 import { Player } from '../../model/player.ts';
+import { CREATE_GAME } from '../../graphql/queries';
 
+const router = useRouter();
 const players = ref([null, null, null, null, null]);
 
 const showModal = ref(true);
 const usernameInput = ref('');
+
+// GraphQL mutation for creating a game
+const { mutate: createGame, loading: creatingGame, error: createGameError } = useMutation(CREATE_GAME);
 
 function submitName() {
     if (usernameInput.value.trim() !== '') {
@@ -69,6 +83,34 @@ watch(players, (newPlayers) => {
 function addPlayer(index) {
     if (index !== -1) {
         players.value[index] = new Player(true, `Bot ${index + 1}`);
+    }
+}
+
+async function startGame() {
+    try {
+        const playerNames = players.value
+            .filter(p => p !== null)
+            .map(p => p.getName());
+        
+        console.log('Creating game with players:', playerNames);
+        
+        const result = await createGame({
+            playerNames
+        });
+        
+        if (result?.data?.createGame?.id) {
+            const gameId = result.data.createGame.id;
+            console.log('Game created with ID:', gameId);
+            
+            // Navigate to game with GraphQL game ID
+            router.push({
+                path: '/game',
+                query: { gameId }
+            });
+        }
+    } catch (error) {
+        console.error('Error creating game:', error);
+        alert('Failed to create game. Please try again.');
     }
 }
 

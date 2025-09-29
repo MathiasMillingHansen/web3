@@ -1,10 +1,10 @@
 import { Randomizer, Shuffler, standardRandomizer, standardShuffler } from '../../src/utils/random_utils'
-import { Card } from '../../src/model/card'
-import { Deck } from '../../src/model/deck'
-import { type Color } from '../../src/model/card'
-import { colors } from '../../src/model/card'
-import { Round } from '../../src/model/round'
-import { Hand } from '../../src/model/hand'
+import { Card } from '../../server/src/models/card'
+import { Deck } from '../../server/src/models/deck'
+import { type Color } from '../../server/src/models/card'
+import { colors } from '../../server/src/models/card'
+import { Round } from '../../server/src/models/round'
+import { Hand } from '../../server/src/models/hand'
 
 // Fix (or import) these types:
 type Game = any

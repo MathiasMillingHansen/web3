@@ -3,8 +3,6 @@ import { Card } from "./card";
 import { Deck } from "./deck";
 import { Hand } from "./hand";
 
-
-
 class Round {
 
     sayUno(playerIndex: number): boolean {
@@ -77,7 +75,7 @@ class Round {
         } while (firstCard && (firstCard.type === 'WILD' || firstCard.type === 'WILD DRAW'));
         if (!firstCard) throw new Error('Deck exhausted before starting');
         this.discardPile = [firstCard];
-        this.currentPlayer = (this.dealer + 1) % this.players.length;
+        this.currentPlayer = (this.dealer) % this.players.length;
         this.direction = 1;
     }
 
