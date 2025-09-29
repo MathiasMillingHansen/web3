@@ -110,13 +110,13 @@ const topCard = computed(() => game.value?.topCard);
 
 // Get current user's cards
 const playerHand = computed(() => {
-  const currentPlayerData = players.value.find((p: any) => p.id === currentUserId);
+  const currentPlayerData = players.value.find(p => p.id === currentUserId);
   return currentPlayerData?.cards || [];
 });
 
 const isMyTurn = computed(() => currentPlayer.value.toString() === currentUserId);
 
-function formatCard(card: any): string {
+function formatCard(card) {
     if (!card) return '';
     if (card.type === 'NUMBERED') {
         return `${card.number}`;
@@ -135,7 +135,7 @@ function formatCard(card: any): string {
     }
 }
 
-function getCardColorClass(card: any): string {
+function getCardColorClass(card) {
     if (!card) return 'card_default';
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
         return 'card_wild';
@@ -146,7 +146,7 @@ function getCardColorClass(card: any): string {
     return 'card_default';
 }
 
-async function playCard(index: number) {
+async function playCard(index) {
     if (!isMyTurn.value || playingCard.value) {
         console.log('Not your turn or already playing a card');
         return;
