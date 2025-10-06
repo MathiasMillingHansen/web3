@@ -225,57 +225,6 @@
     width: 100%;
 }
 
-.bot_controls {
-    margin-top: 1rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.add_bot_button {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: #fff;
-    border: none;
-    border-radius: 1rem;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: transform 0.15s cubic-bezier(.4, 2, .6, 1), background 0.3s;
-}
-
-.add_bot_button:hover:not(:disabled) {
-    transform: scale(1.02);
-    background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
-}
-
-.add_bot_button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.remove_bot_button {
-    background: #ff4444;
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.remove_bot_button:hover {
-    background: #cc0000;
-}
-
 .player_item {
     background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
     color: #fff;
@@ -370,4 +319,81 @@
     font-size: 0.9rem;
     color: #0369a1;
     font-weight: 500;
+}
+
+.join_game_section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.join_input_container {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    align-items: center;
+}
+
+.game_id_input {
+    flex: 1;
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #cbd5e0;
+    border-radius: 0.5rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.game_id_input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.join_button {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    transition: all 0.2s;
+    min-width: 100px;
+}
+
+.join_button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    transform: translateY(-1px);
+}
+
+.join_button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.error_message {
+    color: #e53e3e;
+    background: #fed7d7;
+    border: 1px solid #feb2b2;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.waiting_text {
+    color: #4a5568;
+    font-style: italic;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 1.1rem;
 }

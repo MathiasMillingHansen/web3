@@ -79,6 +79,17 @@ class Round {
         this.direction = 1;
     }
 
+    // Initialize lobby with players but don't start the game yet
+    initializeLobby(playerNames: string[]) {
+        if (playerNames.length > Round.MAX_PLAYERS) {
+            throw new Error('Too many players');
+        }
+        this.players = [...playerNames];
+        this.hands = this.players.map(() => new Hand());
+        this.unoDeclared = this.players.map(() => false);
+        // Don't initialize deck or deal cards - this is just lobby setup
+    }
+
     needsToSayUno(playerIndex: number): boolean {
         const hand = this.playerHand(playerIndex);
         return hand.size === 1 && !this.unoDeclared[playerIndex];
@@ -113,7 +124,21 @@ class Round {
         }
 
         if (card.type === 'WILD DRAW' && hand) {
-            const hasPlayable = hand.some(c => c !== card && this.isPlayable(c, activeColor, hand.filter(x => x !== card)) && !['WILD', 'WILD DRAW'].includes(c.type));
+            console.log('Validating WILD DRAW card:', {
+                activeColor,
+                handSize: hand.length,
+                topCard: this.topCard
+            });
+            
+            const hasPlayable = hand.some(c => {
+                if (c === card) return false; // Don't count the wild draw card itself
+                const isPlayable = this.isPlayable(c, activeColor, hand.filter(x => x !== card));
+                const isWild = ['WILD', 'WILD DRAW'].includes(c.type);
+                console.log(`Card ${c.type} ${(c as any).color || 'no-color'}: playable=${isPlayable}, isWild=${isWild}`);
+                return isPlayable && !isWild;
+            });
+            
+            console.log('Has other playable non-wild cards:', hasPlayable);
             if (hasPlayable) return false;
             return true;
         }
@@ -146,17 +171,49 @@ class Round {
         const hand = this.hands[this.currentPlayer];
         const card = hand.getCards()[index];
         if (!card) return false;
+        
+        // For WILD DRAW cards, validate against current active color (not chosen color)
+        // For other cards, use the chosen color
+        const validationColor = card.type === 'WILD DRAW' ? undefined : color;
+        
+        console.log('Validating card play:', {
+            cardType: card.type,
+            chosenColor: color,
+            validationColor,
+            currentTopCard: this.topCard.type,
+            currentTopColor: (this.topCard as any).color || (this.topCard as any).chosenColor
+        });
+        
+        if (!this.isPlayable(card, validationColor, hand.getCards())) return false;
+        
+        // Only set the chosen color AFTER validation passes
         if (card.type === 'WILD' || card.type === 'WILD DRAW') {
             (card as any).chosenColor = color;
         }
-        if (!this.isPlayable(card, (card as any).chosenColor, hand.getCards())) return false;
+        
         if (!hand.remove(card)) return false;
         this.discardPile.push(card);
         this.handleCardEffect(card);
         if (hand.size !== 1) {
             this.unoDeclared[this.currentPlayer] = false;
         }
-        this.nextPlayer();
+        
+        // Only advance turn for cards that don't handle their own turn advancement
+        if (card.type === 'REVERSE' && this.players.length > 2) {
+            // REVERSE in 3+ player games: just changes direction, normal turn advance
+            console.log('REVERSE (3+ players): advancing turn from', this.currentPlayer);
+            this.nextPlayer();
+            console.log('REVERSE (3+ players): advanced to', this.currentPlayer);
+        } else if (!['SKIP', 'DRAW', 'WILD DRAW', 'REVERSE'].includes(card.type)) {
+            // Regular cards (NUMBERED, WILD): advance turn normally
+            console.log('Regular card: advancing turn from', this.currentPlayer);
+            this.nextPlayer();
+            console.log('Regular card: advanced to', this.currentPlayer);
+        } else {
+            console.log('Special card', card.type, 'handles own turn advancement, current player:', this.currentPlayer);
+        }
+        // SKIP, DRAW, WILD DRAW, and REVERSE (2-player) handle their own turn advancement
+        
         return true;
     }
 
@@ -183,11 +240,30 @@ class Round {
     }
 
     handleCardEffect(card: Card) {
+        console.log('HandleCardEffect called for:', card.type, 'current player before:', this.currentPlayer, 'total players:', this.players.length);
         if (card.type === 'SKIP') {
-            this.nextPlayer();
+            if (this.players.length === 2) {
+                // In 2-player game, SKIP skips the other player - turn stays with current player
+                // We need to advance twice to skip the other player and come back
+                this.nextPlayer(); // Go to other player
+                this.nextPlayer(); // Skip them and come back to original player
+                console.log('SKIP effect (2 players): skipped other player, turn stays with player', this.currentPlayer);
+            } else {
+                // In 3+ player game, SKIP skips the next player
+                this.nextPlayer(); // Skip the next player
+                this.nextPlayer(); // Advance to the player after the skipped one
+                console.log('SKIP effect (3+ players): skipped player and advanced to player', this.currentPlayer);
+            }
         } else if (card.type === 'REVERSE') {
             this.direction = (this.direction === 1 ? -1 : 1);
-            if (this.players.length === 2) this.nextPlayer();
+            if (this.players.length === 2) {
+                // In 2-player game, REVERSE acts like SKIP - skips the other player
+                this.nextPlayer(); // Go to other player
+                this.nextPlayer(); // Skip them and come back to original player
+                console.log('REVERSE effect (2 players): acts like SKIP, turn stays with player', this.currentPlayer);
+            } else {
+                console.log('REVERSE effect (3+ players): direction changed to', this.direction === 1 ? 'clockwise' : 'counter-clockwise');
+            }
         } else if (card.type === 'DRAW') {
             this.nextPlayer();
             for (let i = 0; i < 2; i++) this.drawCard();

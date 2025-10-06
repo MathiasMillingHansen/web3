@@ -7,7 +7,6 @@ export const CREATE_GAME = gql`
       players {
         id
         name
-        isBot
         handSize
       }
       currentPlayer
@@ -16,6 +15,30 @@ export const CREATE_GAME = gql`
         type
         color
         number
+        chosenColor
+      }
+      direction
+      status
+    }
+  }
+`;
+
+export const JOIN_GAME = gql`
+  mutation JoinGame($gameId: ID!, $playerName: String!) {
+    joinGame(gameId: $gameId, playerName: $playerName) {
+      id
+      players {
+        id
+        name
+        handSize
+      }
+      currentPlayer
+      topCard {
+        id
+        type
+        color
+        number
+        chosenColor
       }
       direction
       status
@@ -30,13 +53,13 @@ export const GET_GAME = gql`
       players {
         id
         name
-        isBot
         handSize
         cards {
           id
           type
           color
           number
+          chosenColor
         }
       }
       currentPlayer
@@ -45,6 +68,7 @@ export const GET_GAME = gql`
         type
         color
         number
+        chosenColor
       }
       direction
       status
@@ -59,6 +83,7 @@ export const GET_PLAYER_HAND = gql`
       type
       color
       number
+      chosenColor
     }
   }
 `;
@@ -70,7 +95,6 @@ export const PLAY_CARD = gql`
       players {
         id
         name
-        isBot
         handSize
       }
       currentPlayer
@@ -79,6 +103,7 @@ export const PLAY_CARD = gql`
         type
         color
         number
+        chosenColor
       }
       direction
       status
@@ -93,7 +118,6 @@ export const DRAW_CARD = gql`
       players {
         id
         name
-        isBot
         handSize
       }
       currentPlayer
@@ -102,6 +126,30 @@ export const DRAW_CARD = gql`
         type
         color
         number
+        chosenColor
+      }
+      direction
+      status
+    }
+  }
+`;
+
+export const START_GAME = gql`
+  mutation StartGame($gameId: ID!) {
+    startGame(gameId: $gameId) {
+      id
+      players {
+        id
+        name
+        handSize
+      }
+      currentPlayer
+      topCard {
+        id
+        type
+        color
+        number
+        chosenColor
       }
       direction
       status
@@ -116,7 +164,6 @@ export const GAME_UPDATED = gql`
       players {
         id
         name
-        isBot
         handSize
       }
       currentPlayer
@@ -125,6 +172,7 @@ export const GAME_UPDATED = gql`
         type
         color
         number
+        chosenColor
       }
       direction
       status

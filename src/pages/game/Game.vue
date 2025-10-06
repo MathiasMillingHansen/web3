@@ -36,24 +36,84 @@
             <!-- Player Area -->
             <div :class="styles.player_area">
                 <h2 :class="styles.h2">
-                    Your Cards ({{ players[0]?.name || 'Player' }}) 
-                    <span v-if="!isMyTurn" style="color: #999;">- Waiting for turn</span>
-                    <span v-else style="color: #4CAF50;">- Your turn!</span>
-                </h2>
+                    <span v-if="!isMyTurn" style="color: #999;">Waiting for turn</span>
+                    <span v-else style="color: #4CAF50;">Your turn!</span>
+                </h2>   
                 
-                <!-- Player Hand Cards (Mock for now since we can't see actual hand from server) -->
+                <!-- Player Hand Cards -->
                 <div :class="styles.cards_container">
                     <div 
                         v-for="(card, index) in playerHand" 
                         :key="card.id || index"
                         :class="[styles.card, styles[getCardColorClass(card)]]"
-                        @click="playCard(index)"
+                        @click="handleCardClick(card, index)"
                         :style="{ opacity: isMyTurn ? 1 : 0.6 }"
                     >
                         {{ formatCard(card) }}
                     </div>
                     <div v-if="playerHand.length === 0" :class="styles.no_cards">
                         No cards
+                    </div>
+                </div>
+
+                <!-- Color Selection Modal for Wild Cards -->
+                <div v-if="showColorSelector" :class="styles.color_selector_overlay">
+                    <div :class="styles.color_selector_modal">
+                        <h3>Choose a color for your wild card:</h3>
+                        <div :class="styles.color_options">
+                            <button 
+                                :class="[styles.color_button, styles.color_red]"
+                                @click="selectColor('RED')"
+                            >
+                                Red
+                            </button>
+                            <button 
+                                :class="[styles.color_button, styles.color_yellow]"
+                                @click="selectColor('YELLOW')"
+                            >
+                                Yellow
+                            </button>
+                            <button 
+                                :class="[styles.color_button, styles.color_green]"
+                                @click="selectColor('GREEN')"
+                            >
+                                Green
+                            </button>
+                            <button 
+                                :class="[styles.color_button, styles.color_blue]"
+                                @click="selectColor('BLUE')"
+                            >
+                                Blue
+                            </button>
+                        </div>
+                        <button :class="styles.cancel_button" @click="cancelColorSelection">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Win Modal -->
+                <div v-if="gameWinner" :class="styles.win_modal_overlay">
+                    <div :class="styles.win_modal">
+                        <div :class="styles.win_content">
+                            <h2>🎉 Game Over! 🎉</h2>
+                            <div v-if="gameWinner.id === currentUserId" :class="styles.win_message">
+                                <h3>🏆 Congratulations! You Won! 🏆</h3>
+                                <p>Great job! You've won this UNO game!</p>
+                            </div>
+                            <div v-else :class="styles.lose_message">
+                                <h3>{{ gameWinner.name }} Won!</h3>
+                                <p>Better luck next time!</p>
+                            </div>
+                            <div :class="styles.win_actions">
+                                <button 
+                                    :class="styles.back_to_setup_button"
+                                    @click="goBackToSetup"
+                                >
+                                    Back to Setup
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,7 +130,7 @@
                         :class="[styles.player_status, { [styles.current_player]: index === currentPlayer }]"
                     >
                         {{ player.name }} ({{ player.handSize }} cards)
-                        {{ player.isBot ? '🤖' : '👤' }}
+                        👤
                     </div>
                 </div>
             </div>
@@ -81,15 +141,16 @@
 <script setup>
 import styles from './Game.module.css';
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useQuery, useMutation } from '@vue/apollo-composable';
 import { GET_GAME, PLAY_CARD, DRAW_CARD } from '../../graphql/queries';
 
 const route = useRoute();
+const router = useRouter();
 const gameId = route.query.gameId;
+const currentUserId = route.query.playerId; // Get actual player ID from route
 
-// Get current user's player index (assuming first player is always the user)
-const currentUserId = '0';
+console.log('Game page - Player ID:', currentUserId, 'Game ID:', gameId);
 
 // GraphQL queries and mutations
 const { result: gameResult, loading: gameLoading, error: gameError } = useQuery(GET_GAME, {
@@ -116,14 +177,56 @@ const playerHand = computed(() => {
 
 const isMyTurn = computed(() => currentPlayer.value.toString() === currentUserId);
 
+// Win detection - check if any player has 0 cards
+const gameWinner = computed(() => {
+  if (!players.value || players.value.length === 0) return null;
+  
+  const winner = players.value.find(player => player.handSize === 0);
+  return winner || null;
+});
+
+// Color selection state for wild cards
+const showColorSelector = ref(false);
+const selectedCardIndex = ref(null);
+
+function handleCardClick(card, index) {
+    if (!isMyTurn.value || playingCard.value) {
+        console.log('Not your turn or already playing a card');
+        return;
+    }
+    
+    // Check if this is a wild card that requires color selection
+    if (card.type === 'WILD' || card.type === 'WILD DRAW') {
+        selectedCardIndex.value = index;
+        showColorSelector.value = true;
+    } else {
+        // Regular card, play immediately
+        playCard(index);
+    }
+}
+
+function selectColor(color) {
+    if (selectedCardIndex.value !== null) {
+        playCard(selectedCardIndex.value, color);
+    }
+    cancelColorSelection();
+}
+
+function cancelColorSelection() {
+    showColorSelector.value = false;
+    selectedCardIndex.value = null;
+}
+
 function formatCard(card) {
     if (!card) return '';
     if (card.type === 'NUMBERED') {
         return `${card.number}`;
     } else if (card.type === 'WILD') {
-        return '🌟';
+        // Show color indicator if a color has been chosen
+        return card.chosenColor || card.color ? '�' : '�🌟';
     } else if (card.type === 'WILD DRAW') {
-        return '+4';
+        // Show +4 with color indicator if a color has been chosen
+        return card.chosenColor || card.color ? '+4🎨' : '+4';
     } else if (card.type === 'DRAW') {
         return '+2';
     } else if (card.type === 'REVERSE') {
@@ -137,27 +240,50 @@ function formatCard(card) {
 
 function getCardColorClass(card) {
     if (!card) return 'card_default';
+    
+    // For wild cards, use chosen color if available, otherwise show wild
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
+        const activeColor = card.chosenColor || card.color;
+        if (activeColor) {
+            return `card_${activeColor.toLowerCase()}`;
+        }
         return 'card_wild';
     }
+    
     if (card.color) {
         return `card_${card.color.toLowerCase()}`;
     }
     return 'card_default';
 }
 
-async function playCard(index) {
+async function playCard(index, color = null) {
+    console.log('PlayCard attempt:', {
+        isMyTurn: isMyTurn.value,
+        currentUserId,
+        currentPlayer: currentPlayer.value,
+        cardIndex: index,
+        color,
+        gameId
+    });
+    
     if (!isMyTurn.value || playingCard.value) {
         console.log('Not your turn or already playing a card');
         return;
     }
     
     try {
-        const result = await playCardMutation({
+        const variables = {
             gameId,
             playerId: currentUserId,
             cardIndex: index
-        });
+        };
+        
+        // Add color parameter if provided (for wild cards)
+        if (color) {
+            variables.color = color;
+        }
+        
+        const result = await playCardMutation(variables);
         
         console.log('Card played successfully:', result);
     } catch (error) {
@@ -167,6 +293,13 @@ async function playCard(index) {
 }
 
 async function drawCard() {
+    console.log('DrawCard attempt:', {
+        isMyTurn: isMyTurn.value,
+        currentUserId,
+        currentPlayer: currentPlayer.value,
+        gameId
+    });
+    
     if (!isMyTurn.value || drawingCard.value) {
         console.log('Not your turn or already drawing a card');
         return;
@@ -183,6 +316,11 @@ async function drawCard() {
         console.error('Error drawing card:', error);
         alert('Failed to draw card: ' + error.message);
     }
+}
+
+function goBackToSetup() {
+    // Navigate back to the setup page
+    router.push('/setup');
 }
 
 onMounted(() => {
