@@ -7,14 +7,16 @@ import { createClient } from 'graphql-ws';
 import App from './App.vue';
 import router from './router';
 
+const hostname = window.location.hostname;
+
 // HTTP connection to the API
 const httpLink = createHttpLink({
-  uri: 'http://localhost:4000/graphql',
+  uri: `http://${hostname}:4000/graphql`,
 });
 
 // Create a WebSocket link for subscriptions
 const wsLink = new GraphQLWsLink(createClient({
-  url: 'ws://localhost:4000/graphql',
+  url: `ws://${hostname}:4000/graphql`,
 }));
 
 // Split based on operation type
