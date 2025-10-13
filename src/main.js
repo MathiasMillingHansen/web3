@@ -9,17 +9,14 @@ import router from './router';
 
 const hostname = window.location.hostname;
 
-// HTTP connection to the API
 const httpLink = createHttpLink({
   uri: `http://${hostname}:4000/graphql`,
 });
 
-// Create a WebSocket link for subscriptions
 const wsLink = new GraphQLWsLink(createClient({
   url: `ws://${hostname}:4000/graphql`,
 }));
 
-// Split based on operation type
 const link = split(
   ({ query }) => {
     const definition = getMainDefinition(query);
@@ -32,7 +29,6 @@ const link = split(
   httpLink,
 );
 
-// Create Apollo client
 const apolloClient = new ApolloClient({
   link,
   cache: new InMemoryCache(),

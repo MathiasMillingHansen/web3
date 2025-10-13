@@ -168,6 +168,13 @@ export const GAME_UPDATED = gql`
         name
         handSize
         hasDeclaredUno
+        cards {
+          id
+          type
+          color
+          number
+          chosenColor
+        }
       }
       currentPlayer
       topCard {

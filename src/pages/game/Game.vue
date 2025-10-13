@@ -123,8 +123,8 @@
 import styles from './Game.module.css';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useQuery, useMutation } from '@vue/apollo-composable';
-import { GET_GAME, PLAY_CARD, DRAW_CARD, DECLARE_UNO, CATCH_UNO } from '../../graphql/queries';
+import { useQuery, useMutation, useSubscription } from '@vue/apollo-composable';
+import { GET_GAME, PLAY_CARD, DRAW_CARD, DECLARE_UNO, CATCH_UNO, GAME_UPDATED } from '../../graphql/queries';
 
 const route = useRoute();
 const router = useRouter();
@@ -138,7 +138,7 @@ const { result: gameResult, loading: gameLoading, error: gameError } = useQuery(
     id: gameId,
     playerId: currentUserId
 }, {
-    pollInterval: 1000, // Poll every second for updates
+    fetchPolicy: 'cache-and-network'
 });
 
 const { mutate: playCardMutation, loading: playingCard } = useMutation(PLAY_CARD);
@@ -146,13 +146,23 @@ const { mutate: drawCardMutation, loading: drawingCard } = useMutation(DRAW_CARD
 const { mutate: declareUnoMutation } = useMutation(DECLARE_UNO);
 const { mutate: catchUnoMutation } = useMutation(CATCH_UNO);
 
+// Add subscription for real-time updates
+const { result: subscriptionResult } = useSubscription(GAME_UPDATED, {
+    gameId: gameId
+});
+
 // Computed properties from GraphQL data
-const game = computed(() => gameResult.value?.game);
+// Use subscription data when available, fallback to initial query
+const game = computed(() => {
+    if (subscriptionResult.value?.gameUpdated) {
+        return subscriptionResult.value.gameUpdated;
+    }
+    return gameResult.value?.game;
+});
 const players = computed(() => game.value?.players || []);
 const currentPlayer = computed(() => game.value?.currentPlayer || 0);
 const topCard = computed(() => game.value?.topCard);
 
-// Get current user's cards
 const playerHand = computed(() => {
     const currentPlayerData = players.value.find(p => p.id === currentUserId);
     return currentPlayerData?.cards || [];
@@ -178,12 +188,10 @@ function handleCardClick(card, index) {
         return;
     }
 
-    // Check if this is a wild card that requires color selection
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
         selectedCardIndex.value = index;
         showColorSelector.value = true;
     } else {
-        // Regular card, play immediately
         playCard(index);
     }
 }
@@ -205,10 +213,8 @@ function formatCard(card) {
     if (card.type === 'NUMBERED') {
         return `${card.number}`;
     } else if (card.type === 'WILD') {
-        // Show color indicator if a color has been chosen
         return card.chosenColor || card.color ? '🎨' : '🎨';
     } else if (card.type === 'WILD DRAW') {
-        // Show +4 with color indicator if a color has been chosen
         return card.chosenColor || card.color ? '+4🎨' : '+4';
     } else if (card.type === 'DRAW') {
         return '+2';
@@ -344,6 +350,13 @@ onMounted(() => {
 watch(game, (newGame) => {
     if (newGame) {
         console.log('Game updated:', newGame);
+    }
+}, { deep: true });
+
+// Watch for subscription updates and log them
+watch(subscriptionResult, (newResult) => {
+    if (newResult?.gameUpdated) {
+        console.log('Game updated via subscription:', newResult.gameUpdated);
     }
 }, { deep: true });
 

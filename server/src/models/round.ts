@@ -86,7 +86,6 @@ class Round {
         this.players = [...playerNames];
         this.hands = this.players.map(() => new Hand());
         this.unoDeclared = this.players.map(() => false);
-        // Don't initialize deck or deal cards - this is just lobby setup
     }
 
     needsToSayUno(playerIndex: number): boolean {
@@ -171,8 +170,6 @@ class Round {
         const card = hand.getCards()[index];
         if (!card) return false;
         
-        // For WILD DRAW cards, validate against current active color (not chosen color)
-        // For other cards, use the chosen color
         const validationColor = card.type === 'WILD DRAW' ? undefined : color;
         
         console.log('Validating card play:', {
@@ -185,7 +182,6 @@ class Round {
         
         if (!this.isPlayable(card, validationColor, hand.getCards())) return false;
         
-        // Only set the chosen color AFTER validation passes
         if (card.type === 'WILD' || card.type === 'WILD DRAW') {
             (card as any).chosenColor = color;
         }

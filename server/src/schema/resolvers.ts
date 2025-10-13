@@ -15,11 +15,11 @@ export const resolvers = {
     game: (_: any, { id, playerId }: { id: string; playerId?: string }) => {
       const game = games.get(id);
       if (!game) throw new Error('Game not found');
-      return formatGame(id, game, playerId);
+      return formatGame(id, game);
     },
     
     games: () => {
-      return Array.from(games.entries()).map(([id, game]) => formatGame(id, game, undefined));
+      return Array.from(games.entries()).map(([id, game]) => formatGame(id, game));
     },
 
     playerHand: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
@@ -53,7 +53,7 @@ export const resolvers = {
       
       games.set(gameId, round);
       
-      const gameData = formatGame(gameId, round, undefined);
+      const gameData = formatGame(gameId, round);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       
       return gameData;
@@ -63,25 +63,20 @@ export const resolvers = {
       const game = games.get(gameId);
       if (!game) throw new Error('Game not found');
       
-      // Check if game is full (max 5 players)
       if (game.players.length >= 5) {
         throw new Error('Game is full');
       }
       
-      // Check if player name already exists
       if (game.players.includes(playerName)) {
         throw new Error('Player name already exists in this game');
       }
       
-      // Add the new player to the lobby
       game.players.push(playerName);
       game.hands.push(new Hand());
       
-      // Don't auto-start the game - wait for host to call startGame mutation
       // If game has already started, deal cards to new player
       if (game.discardPile.length > 0) {
-        // Game already started, deal cards to new player
-        const cardsPerPlayer = 7; // Standard hand size
+        const cardsPerPlayer = 7; 
         for (let i = 0; i < cardsPerPlayer; i++) {
           const card = game.deck.deal();
           if (card) game.hands[game.hands.length - 1].add(card);
@@ -90,7 +85,7 @@ export const resolvers = {
       
       console.log(`Player ${playerName} joined game ${gameId}. Now ${game.players.length} players.`);
       
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       
       return gameData;
@@ -100,7 +95,6 @@ export const resolvers = {
       const game = games.get(gameId);
       if (!game) throw new Error('Game not found');
       
-      // Check if game has minimum players
       if (game.players.length < 2) {
         throw new Error('Need at least 2 players to start the game');
       }
@@ -113,7 +107,7 @@ export const resolvers = {
         game.setup(game.players, deck, 7);
       }
       
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       
       console.log('Publishing game update:', {
         gameId,
@@ -162,7 +156,7 @@ export const resolvers = {
       });
       if (!success) throw new Error('Invalid move');
       
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       
       return gameData;
@@ -188,10 +182,9 @@ export const resolvers = {
       const drawnCard = game.drawCard();
       if (!drawnCard) throw new Error('No more cards to draw');
       
-      // Skip to next player after drawing
       game.nextPlayer();
       
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       
       return gameData;
@@ -205,7 +198,7 @@ export const resolvers = {
 
       console.log(`Player ${playerIndex} declared UNO in game ${gameId}`);
 
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       return {
         id: gameId,
@@ -222,7 +215,7 @@ export const resolvers = {
 
       console.log(`Player ${playerIndex} caught an opponent not saying UNO in game ${gameId}`);
 
-      const gameData = formatGame(gameId, game, undefined);
+      const gameData = formatGame(gameId, game);
       pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
       return {
         id: gameId,
@@ -240,7 +233,7 @@ export const resolvers = {
   },
 };
 
-function formatGame(id: string, round: Round, requestingPlayerId?: string) {
+function formatGame(id: string, round: Round) {
   // Determine game status based on game state
   let status = 'LOBBY';
   if (round.discardPile.length > 0) {
@@ -253,10 +246,7 @@ function formatGame(id: string, round: Round, requestingPlayerId?: string) {
       id: index.toString(),
       name,
       handSize: round.hands[index] ? round.hands[index].size : 0,
-      // Only include cards if this is the requesting player
-      cards: requestingPlayerId && requestingPlayerId === index.toString() && round.hands[index]
-        ? round.hands[index].getCards().map(formatCard)
-        : [],
+      cards: round.hands[index].getCards().map(formatCard),
       hasDeclaredUno: round.hasDeclaredUno(index)
     })),
     currentPlayer: round.currentPlayer,
@@ -278,6 +268,6 @@ function formatCard(card: any) {
     type: card.type,
     color: displayColor,
     number: card.number !== undefined ? card.number : null,
-    chosenColor: card.chosenColor || null, // Include chosen color for debugging/reference
+    chosenColor: card.chosenColor || null, 
   };
 }

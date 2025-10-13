@@ -150,7 +150,6 @@ import { CREATE_GAME, JOIN_GAME, GET_GAME, GAME_UPDATED, START_GAME } from '../.
 
 const router = useRouter();
 
-// State management
 const showNameModal = ref(true);
 const playerName = ref('');
 const gameMode = ref(''); // 'create', 'join', 'lobby', or ''
@@ -162,7 +161,6 @@ const joinGameError = ref('');
 const currentPlayerId = ref(''); // Player ID for joined players
 const lobbyPlayers = ref([]); // Players in the lobby
 
-// Computed properties
 const totalPlayers = computed(() => {
     if (gameMode.value === 'lobby') {
         return lobbyPlayers.value.length;
@@ -175,24 +173,20 @@ const currentPlayerCount = computed(() => {
     return lobbyPlayers.value.length > 0 ? lobbyPlayers.value.length : totalPlayers.value;
 });
 
-// GraphQL mutations and client
 const { mutate: createGame, loading: creatingGame, error: createGameError } = useMutation(CREATE_GAME);
 const { mutate: joinGame, loading: joiningGame, error: joinGameGraphQLError } = useMutation(JOIN_GAME);
 const { mutate: startGame, loading: startingGame } = useMutation(START_GAME);
 const { resolveClient } = useApolloClient();
 
-// Subscription management with reactive variables
 const subscriptionEnabled = ref(false);
 const subscriptionGameId = ref('');
 
-// Set up subscription at top level, but conditionally enabled
 const { result: subscriptionResult } = useSubscription(
   GAME_UPDATED,
   () => ({ gameId: subscriptionGameId.value }),
   () => ({ enabled: subscriptionEnabled.value && !!subscriptionGameId.value })
 );
 
-// Watch subscription results
 watch(subscriptionResult, (newResult) => {
   if (newResult?.gameUpdated) {
     console.log('Game updated via subscription:', newResult.gameUpdated);
