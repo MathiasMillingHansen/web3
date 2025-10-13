@@ -54,6 +54,7 @@ export const GET_GAME = gql`
         id
         name
         handSize
+        hasDeclaredUno
         cards {
           id
           type
@@ -96,6 +97,7 @@ export const PLAY_CARD = gql`
         id
         name
         handSize
+        hasDeclaredUno
       }
       currentPlayer
       topCard {
@@ -165,6 +167,7 @@ export const GAME_UPDATED = gql`
         id
         name
         handSize
+        hasDeclaredUno
       }
       currentPlayer
       topCard {
@@ -175,6 +178,24 @@ export const GAME_UPDATED = gql`
         chosenColor
       }
       direction
+      status
+    }
+  }
+`;
+
+export const DECLARE_UNO = gql`
+  mutation DeclareUno($gameId: ID!, $playerId: ID!) {
+    declareUno(gameId: $gameId, playerId: $playerId) {
+      id
+      status
+    }
+  }
+`;
+
+export const CATCH_UNO = gql`
+  mutation CatchUno($gameId: ID!, $playerId: ID!) {
+    catchUno(gameId: $gameId, playerId: $playerId) {
+      id
       status
     }
   }

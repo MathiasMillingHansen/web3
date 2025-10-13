@@ -7,7 +7,6 @@ import { standardShuffler } from '../utils/random_utils';
 
 const pubsub = new PubSub();
 
-// In-memory game storage (replace with database in production)
 const games = new Map<string, Round>();
 let gameIdCounter = 1;
 
@@ -142,7 +141,7 @@ export const resolvers = {
         requestedPlayerId: playerId,
         playerIndex,
         currentPlayer: game.currentPlayer,
-        cardIndex,
+        cardIndex,  
         totalPlayers: game.players.length,
         cardToPlay: game.hands[playerIndex].getCards()[cardIndex]
       });
@@ -197,6 +196,39 @@ export const resolvers = {
       
       return gameData;
     },
+
+    declareUno: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
+      const game = games.get(gameId);
+      if (!game) throw new Error('Game not found');
+      const playerIndex = parseInt(playerId);
+      const status = game.sayUno(playerIndex);
+
+      console.log(`Player ${playerIndex} declared UNO in game ${gameId}`);
+
+      const gameData = formatGame(gameId, game, undefined);
+      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
+      return {
+        id: gameId,
+        status
+      };
+    },
+
+    catchUno: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
+      const game = games.get(gameId);
+      if (!game) throw new Error('Game not found');
+      const playerIndex = parseInt(playerId);
+
+      const status = game.catchUno(playerIndex);
+
+      console.log(`Player ${playerIndex} caught an opponent not saying UNO in game ${gameId}`);
+
+      const gameData = formatGame(gameId, game, undefined);
+      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
+      return {
+        id: gameId,
+        status
+      };
+    }
   },
 
   Subscription: {
@@ -224,12 +256,14 @@ function formatGame(id: string, round: Round, requestingPlayerId?: string) {
       // Only include cards if this is the requesting player
       cards: requestingPlayerId && requestingPlayerId === index.toString() && round.hands[index]
         ? round.hands[index].getCards().map(formatCard)
-        : []
+        : [],
+      hasDeclaredUno: round.hasDeclaredUno(index)
     })),
     currentPlayer: round.currentPlayer,
     topCard: round.discardPile.length > 0 ? formatCard(round.discardPile[round.discardPile.length - 1]) : null,
     direction: round.direction,
     status,
+
   };
 }
 

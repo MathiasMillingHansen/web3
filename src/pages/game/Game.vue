@@ -4,13 +4,13 @@
         <div v-if="gameLoading" :class="styles.loading">
             <h2>Loading game...</h2>
         </div>
-        
+
         <!-- Error State -->
         <div v-else-if="gameError" :class="styles.error">
             <h2>Error loading game</h2>
             <p>{{ gameError.message }}</p>
         </div>
-        
+
         <!-- Game Content -->
         <template v-else-if="game">
             <!-- Deck Area -->
@@ -22,14 +22,14 @@
                 <div v-else :class="[styles.deck, styles.card_default]">
                     No cards
                 </div>
-                
+
                 <!-- Draw Card Button -->
-                <button 
-                    @click="drawCard" 
-                    :disabled="!isMyTurn || drawingCard"
-                    :class="styles.draw_button"
-                >
+                <button @click="drawCard" :disabled="!isMyTurn || drawingCard" :class="styles.draw_button">
                     {{ drawingCard ? 'Drawing...' : 'Draw Card' }}
+                </button>
+
+                <button @click="sayUno(currentUserId)" :class="styles.draw_button">
+                    Say UNO
                 </button>
             </div>
 
@@ -38,17 +38,13 @@
                 <h2 :class="styles.h2">
                     <span v-if="!isMyTurn" style="color: #999;">Waiting for turn</span>
                     <span v-else style="color: #4CAF50;">Your turn!</span>
-                </h2>   
-                
+                </h2>
+
                 <!-- Player Hand Cards -->
                 <div :class="styles.cards_container">
-                    <div 
-                        v-for="(card, index) in playerHand" 
-                        :key="card.id || index"
-                        :class="[styles.card, styles[getCardColorClass(card)]]"
-                        @click="handleCardClick(card, index)"
-                        :style="{ opacity: isMyTurn ? 1 : 0.6 }"
-                    >
+                    <div v-for="(card, index) in playerHand" :key="card.id || index"
+                        :class="[styles.card, styles[getCardColorClass(card)]]" @click="handleCardClick(card, index)"
+                        :style="{ opacity: isMyTurn ? 1 : 0.6 }">
                         {{ formatCard(card) }}
                     </div>
                     <div v-if="playerHand.length === 0" :class="styles.no_cards">
@@ -61,28 +57,16 @@
                     <div :class="styles.color_selector_modal">
                         <h3>Choose a color for your wild card:</h3>
                         <div :class="styles.color_options">
-                            <button 
-                                :class="[styles.color_button, styles.color_red]"
-                                @click="selectColor('RED')"
-                            >
+                            <button :class="[styles.color_button, styles.color_red]" @click="selectColor('RED')">
                                 Red
                             </button>
-                            <button 
-                                :class="[styles.color_button, styles.color_yellow]"
-                                @click="selectColor('YELLOW')"
-                            >
+                            <button :class="[styles.color_button, styles.color_yellow]" @click="selectColor('YELLOW')">
                                 Yellow
                             </button>
-                            <button 
-                                :class="[styles.color_button, styles.color_green]"
-                                @click="selectColor('GREEN')"
-                            >
+                            <button :class="[styles.color_button, styles.color_green]" @click="selectColor('GREEN')">
                                 Green
                             </button>
-                            <button 
-                                :class="[styles.color_button, styles.color_blue]"
-                                @click="selectColor('BLUE')"
-                            >
+                            <button :class="[styles.color_button, styles.color_blue]" @click="selectColor('BLUE')">
                                 Blue
                             </button>
                         </div>
@@ -106,10 +90,7 @@
                                 <p>Better luck next time!</p>
                             </div>
                             <div :class="styles.win_actions">
-                                <button 
-                                    :class="styles.back_to_setup_button"
-                                    @click="goBackToSetup"
-                                >
+                                <button :class="styles.back_to_setup_button" @click="goBackToSetup">
                                     Back to Setup
                                 </button>
                             </div>
@@ -117,19 +98,19 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Game Status -->
             <div :class="styles.game_status">
                 <h3>Game Status</h3>
                 <p>Current Player: {{ players[currentPlayer]?.name || 'Unknown' }}</p>
                 <p>Direction: {{ game.direction === 1 ? 'Clockwise' : 'Counter-clockwise' }}</p>
+                <p>Click on player to catch UNO!</p>
                 <div :class="styles.players_list">
-                    <div 
-                        v-for="(player, index) in players" 
-                        :key="player.id"
+                    <div v-for="(player, index) in players" :key="player.id"
                         :class="[styles.player_status, { [styles.current_player]: index === currentPlayer }]"
-                    >
+                        @click="catchUno(player.id)">
                         {{ player.name }} ({{ player.handSize }} cards)
+                        <span v-if="player.hasDeclaredUno">has UNO!</span>
                         👤
                     </div>
                 </div>
@@ -143,7 +124,7 @@ import styles from './Game.module.css';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuery, useMutation } from '@vue/apollo-composable';
-import { GET_GAME, PLAY_CARD, DRAW_CARD } from '../../graphql/queries';
+import { GET_GAME, PLAY_CARD, DRAW_CARD, DECLARE_UNO, CATCH_UNO } from '../../graphql/queries';
 
 const route = useRoute();
 const router = useRouter();
@@ -154,14 +135,16 @@ console.log('Game page - Player ID:', currentUserId, 'Game ID:', gameId);
 
 // GraphQL queries and mutations
 const { result: gameResult, loading: gameLoading, error: gameError } = useQuery(GET_GAME, {
-  id: gameId,
-  playerId: currentUserId
+    id: gameId,
+    playerId: currentUserId
 }, {
-  pollInterval: 1000, // Poll every second for updates
+    pollInterval: 1000, // Poll every second for updates
 });
 
 const { mutate: playCardMutation, loading: playingCard } = useMutation(PLAY_CARD);
 const { mutate: drawCardMutation, loading: drawingCard } = useMutation(DRAW_CARD);
+const { mutate: declareUnoMutation } = useMutation(DECLARE_UNO);
+const { mutate: catchUnoMutation } = useMutation(CATCH_UNO);
 
 // Computed properties from GraphQL data
 const game = computed(() => gameResult.value?.game);
@@ -171,18 +154,18 @@ const topCard = computed(() => game.value?.topCard);
 
 // Get current user's cards
 const playerHand = computed(() => {
-  const currentPlayerData = players.value.find(p => p.id === currentUserId);
-  return currentPlayerData?.cards || [];
+    const currentPlayerData = players.value.find(p => p.id === currentUserId);
+    return currentPlayerData?.cards || [];
 });
 
 const isMyTurn = computed(() => currentPlayer.value.toString() === currentUserId);
 
 // Win detection - check if any player has 0 cards
 const gameWinner = computed(() => {
-  if (!players.value || players.value.length === 0) return null;
-  
-  const winner = players.value.find(player => player.handSize === 0);
-  return winner || null;
+    if (!players.value || players.value.length === 0) return null;
+
+    const winner = players.value.find(player => player.handSize === 0);
+    return winner || null;
 });
 
 // Color selection state for wild cards
@@ -194,7 +177,7 @@ function handleCardClick(card, index) {
         console.log('Not your turn or already playing a card');
         return;
     }
-    
+
     // Check if this is a wild card that requires color selection
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
         selectedCardIndex.value = index;
@@ -223,7 +206,7 @@ function formatCard(card) {
         return `${card.number}`;
     } else if (card.type === 'WILD') {
         // Show color indicator if a color has been chosen
-        return card.chosenColor || card.color ? '�' : '�🌟';
+        return card.chosenColor || card.color ? '🎨' : '🎨';
     } else if (card.type === 'WILD DRAW') {
         // Show +4 with color indicator if a color has been chosen
         return card.chosenColor || card.color ? '+4🎨' : '+4';
@@ -240,7 +223,7 @@ function formatCard(card) {
 
 function getCardColorClass(card) {
     if (!card) return 'card_default';
-    
+
     // For wild cards, use chosen color if available, otherwise show wild
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
         const activeColor = card.chosenColor || card.color;
@@ -249,7 +232,7 @@ function getCardColorClass(card) {
         }
         return 'card_wild';
     }
-    
+
     if (card.color) {
         return `card_${card.color.toLowerCase()}`;
     }
@@ -265,26 +248,26 @@ async function playCard(index, color = null) {
         color,
         gameId
     });
-    
+
     if (!isMyTurn.value || playingCard.value) {
         console.log('Not your turn or already playing a card');
         return;
     }
-    
+
     try {
         const variables = {
             gameId,
             playerId: currentUserId,
             cardIndex: index
         };
-        
+
         // Add color parameter if provided (for wild cards)
         if (color) {
             variables.color = color;
         }
-        
+
         const result = await playCardMutation(variables);
-        
+
         console.log('Card played successfully:', result);
     } catch (error) {
         console.error('Error playing card:', error);
@@ -299,18 +282,18 @@ async function drawCard() {
         currentPlayer: currentPlayer.value,
         gameId
     });
-    
+
     if (!isMyTurn.value || drawingCard.value) {
         console.log('Not your turn or already drawing a card');
         return;
     }
-    
+
     try {
         const result = await drawCardMutation({
             gameId,
             playerId: currentUserId
         });
-        
+
         console.log('Card drawn successfully:', result);
     } catch (error) {
         console.error('Error drawing card:', error);
@@ -319,8 +302,34 @@ async function drawCard() {
 }
 
 function goBackToSetup() {
-    // Navigate back to the setup page
     router.push('/setup');
+}
+
+async function sayUno(playerId) {
+    try {
+        const result = await declareUnoMutation({
+            gameId,
+            playerId
+        });
+
+    } catch (error) {
+        console.error('Error declaring UNO:', error);
+        alert('Failed to declare UNO: ' + error.message);
+    }
+}
+
+async function catchUno(playerId) {
+    try {
+        const result = await catchUnoMutation({
+            gameId,
+            playerId
+        });
+
+        console.log('UNO caught successfully:', result);
+    } catch (error) {
+        console.error('Error catching UNO:', error);
+        alert('Failed to catch UNO: ' + error.message);
+    }
 }
 
 onMounted(() => {

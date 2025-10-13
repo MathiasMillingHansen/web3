@@ -71,6 +71,7 @@
     background: #e9ecef;
     border-radius: 0.5rem;
     font-size: 0.9rem;
+    cursor: pointer;
 }
 
 .current_player {

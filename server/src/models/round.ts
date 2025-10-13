@@ -7,6 +7,7 @@ class Round {
 
     sayUno(playerIndex: number): boolean {
         const hand = this.playerHand(playerIndex);
+        console.log("Player", playerIndex, "is saying UNO with hand size", hand.size);
         if (hand.size === 1) {
             this.unoDeclared[playerIndex] = true;
             return true;
@@ -17,10 +18,8 @@ class Round {
     catchUno(targetPlayerIndex: number): boolean {
         const hand = this.playerHand(targetPlayerIndex);
         if (hand.size === 1 && !this.unoDeclared[targetPlayerIndex]) {
-            for (let i = 0; i < 2; i++) {
-                const card = this.deck.deal();
-                if (card) hand.add(card);
-            }
+            this.drawCard(targetPlayerIndex);
+            this.drawCard(targetPlayerIndex);
             this.unoDeclared[targetPlayerIndex] = false;
             return true;
         }
@@ -193,88 +192,55 @@ class Round {
         
         if (!hand.remove(card)) return false;
         this.discardPile.push(card);
-        this.handleCardEffect(card);
-        if (hand.size !== 1) {
-            this.unoDeclared[this.currentPlayer] = false;
-        }
         
-        // Only advance turn for cards that don't handle their own turn advancement
-        if (card.type === 'REVERSE' && this.players.length > 2) {
-            // REVERSE in 3+ player games: just changes direction, normal turn advance
-            console.log('REVERSE (3+ players): advancing turn from', this.currentPlayer);
-            this.nextPlayer();
-            console.log('REVERSE (3+ players): advanced to', this.currentPlayer);
-        } else if (!['SKIP', 'DRAW', 'WILD DRAW', 'REVERSE'].includes(card.type)) {
-            // Regular cards (NUMBERED, WILD): advance turn normally
-            console.log('Regular card: advancing turn from', this.currentPlayer);
-            this.nextPlayer();
-            console.log('Regular card: advanced to', this.currentPlayer);
-        } else {
-            console.log('Special card', card.type, 'handles own turn advancement, current player:', this.currentPlayer);
-        }
-        // SKIP, DRAW, WILD DRAW, and REVERSE (2-player) handle their own turn advancement
+        switch (card.type) {
+            case 'REVERSE':
+                if (this.players.length === 2) {
+                    this.nextPlayer();
+                } else {
+                    this.direction = this.direction === 1 ? -1 : 1;
+                }
+                break;
+            case 'SKIP':
+                this.nextPlayer();
+                break;
+            case 'DRAW':
+                this.nextPlayer();
+                const nextHand = this.hands[this.currentPlayer];
+                this.drawCard();
+                this.drawCard();
+                break;
+            case 'WILD DRAW':
+                this.nextPlayer();
+                const affectedHand = this.hands[this.currentPlayer];
+                this.drawCard();
+                this.drawCard();
+                this.drawCard();
+                this.drawCard();
+                break;    
+        }  
         
-        return true;
-    }
-
-    playCard(card: Card): boolean {
-        const hand = this.hands[this.currentPlayer];
-        if ((card.type === 'WILD' || card.type === 'WILD DRAW') && !(card as any).chosenColor) {
-            throw new Error('Must set chosenColor on wild cards before playing');
-        }
-        if (!this.isPlayable(card, (card as any).chosenColor, hand.getCards())) return false;
-        if (!hand.remove(card)) return false;
-        this.discardPile.push(card);
-        this.handleCardEffect(card);
-        if (hand.size !== 1) {
-            this.unoDeclared[this.currentPlayer] = false;
-        }
         this.nextPlayer();
         return true;
     }
 
-    drawCard(): Card | undefined {
+    drawCard(targetPlayerIndex?: number): Card | undefined {
         const card = this.deck.deal();
-        if (card) this.hands[this.currentPlayer].add(card);
-        return card;
-    }
-
-    handleCardEffect(card: Card) {
-        console.log('HandleCardEffect called for:', card.type, 'current player before:', this.currentPlayer, 'total players:', this.players.length);
-        if (card.type === 'SKIP') {
-            if (this.players.length === 2) {
-                // In 2-player game, SKIP skips the other player - turn stays with current player
-                // We need to advance twice to skip the other player and come back
-                this.nextPlayer(); // Go to other player
-                this.nextPlayer(); // Skip them and come back to original player
-                console.log('SKIP effect (2 players): skipped other player, turn stays with player', this.currentPlayer);
+        if (card) {
+            if (targetPlayerIndex !== undefined) {
+                this.hands[targetPlayerIndex].add(card);
+                this.unoDeclared[targetPlayerIndex] = false;
             } else {
-                // In 3+ player game, SKIP skips the next player
-                this.nextPlayer(); // Skip the next player
-                this.nextPlayer(); // Advance to the player after the skipped one
-                console.log('SKIP effect (3+ players): skipped player and advanced to player', this.currentPlayer);
+                this.hands[this.currentPlayer].add(card);
+                this.unoDeclared[this.currentPlayer] = false;
             }
-        } else if (card.type === 'REVERSE') {
-            this.direction = (this.direction === 1 ? -1 : 1);
-            if (this.players.length === 2) {
-                // In 2-player game, REVERSE acts like SKIP - skips the other player
-                this.nextPlayer(); // Go to other player
-                this.nextPlayer(); // Skip them and come back to original player
-                console.log('REVERSE effect (2 players): acts like SKIP, turn stays with player', this.currentPlayer);
-            } else {
-                console.log('REVERSE effect (3+ players): direction changed to', this.direction === 1 ? 'clockwise' : 'counter-clockwise');
-            }
-        } else if (card.type === 'DRAW') {
-            this.nextPlayer();
-            for (let i = 0; i < 2; i++) this.drawCard();
-        } else if (card.type === 'WILD DRAW') {
-            this.nextPlayer();
-            for (let i = 0; i < 4; i++) this.drawCard();
         }
+        return card;
     }
 
     nextPlayer() {
         this.currentPlayer = (this.currentPlayer + this.direction + this.players.length) % this.players.length;
+        console.log('player is now:', this.currentPlayer);
     }
 }
 

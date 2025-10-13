@@ -6,6 +6,7 @@ export const typeDefs = gql`
     name: String!
     handSize: Int!
     cards: [Card!]  # Only visible to the player themselves
+    hasDeclaredUno: Boolean
   }
 
   type Card {
@@ -37,6 +38,8 @@ export const typeDefs = gql`
     startGame(gameId: ID!): Game!
     playCard(gameId: ID!, playerId: ID!, cardIndex: Int!, color: String): Game!
     drawCard(gameId: ID!, playerId: ID!): Game!
+    declareUno(gameId: ID!, playerId: ID!): Game!
+    catchUno(gameId: ID!, playerId: ID!): Game!
   }
 
   type Subscription {
