@@ -41,4 +41,8 @@ type Color = (typeof colors)[number]
 
 type TypedCard<T extends Type> = Extract<Card, { type: T }>;
 
-export { type Card, type Color, colors, type NumberedCard, type SkipCard, type ReverseCard, type DrawCard, type WildCard, type WildDrawCard, type ColouredCard, type WildCards, type Type, type TypedCard }
+function isColor(value: string): value is Color {
+  return colors.includes(value as Color);
+}
+
+export { type Card, type Color, colors, type NumberedCard, type SkipCard, type ReverseCard, type DrawCard, type WildCard, type WildDrawCard, type ColouredCard, type WildCards, type Type, type TypedCard, isColor }

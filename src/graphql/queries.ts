@@ -11,12 +11,11 @@ export const CREATE_GAME = gql`
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -34,12 +33,11 @@ export const JOIN_GAME = gql`
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -56,21 +54,18 @@ export const GET_GAME = gql`
         handSize
         hasDeclaredUno
         cards {
-          id
           type
           color
           number
-          chosenColor
         }
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -80,11 +75,9 @@ export const GET_GAME = gql`
 export const GET_PLAYER_HAND = gql`
   query GetPlayerHand($gameId: ID!, $playerId: ID!) {
     playerHand(gameId: $gameId, playerId: $playerId) {
-      id
       type
       color
       number
-      chosenColor
     }
   }
 `;
@@ -101,12 +94,11 @@ export const PLAY_CARD = gql`
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -124,12 +116,11 @@ export const DRAW_CARD = gql`
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -147,12 +138,11 @@ export const START_GAME = gql`
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }
@@ -169,21 +159,18 @@ export const GAME_UPDATED = gql`
         handSize
         hasDeclaredUno
         cards {
-          id
           type
           color
           number
-          chosenColor
         }
       }
       currentPlayer
       topCard {
-        id
         type
         color
         number
-        chosenColor
       }
+      topColor
       direction
       status
     }

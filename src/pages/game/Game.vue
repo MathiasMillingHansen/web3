@@ -16,7 +16,7 @@
             <!-- Deck Area -->
             <div :class="styles.deck_area">
                 <h3>Top Card</h3>
-                <div v-if="topCard" :class="[styles.deck, styles[getCardColorClass(topCard)]]">
+                <div v-if="topCard" :class="[styles.deck, styles[getCardColorClass(topCard, game.topColor)]]">
                     {{ formatCard(topCard) }}
                 </div>
                 <div v-else :class="[styles.deck, styles.card_default]">
@@ -210,38 +210,28 @@ function cancelColorSelection() {
 
 function formatCard(card) {
     if (!card) return '';
-    if (card.type === 'NUMBERED') {
-        return `${card.number}`;
-    } else if (card.type === 'WILD') {
-        return card.chosenColor || card.color ? '🎨' : '🎨';
-    } else if (card.type === 'WILD DRAW') {
-        return card.chosenColor || card.color ? '+4🎨' : '+4';
-    } else if (card.type === 'DRAW') {
-        return '+2';
-    } else if (card.type === 'REVERSE') {
-        return '↩️';
-    } else if (card.type === 'SKIP') {
-        return '⊘';
-    } else {
-        return card.type || '';
+    switch (card.type) {
+        case 'NUMBERED':  return `${card.number}`;
+        case 'WILD':      return '🎨';
+        case 'WILD DRAW': return '+4🎨';
+        case 'DRAW':      return '+2';
+        case 'REVERSE':   return '↩️';
+        case 'SKIP':      return '⊘';
+        default:          return '';
     }
 }
 
-function getCardColorClass(card) {
+function getCardColorClass(card, chosenColor = undefined) {
     if (!card) return 'card_default';
 
-    // For wild cards, use chosen color if available, otherwise show wild
     if (card.type === 'WILD' || card.type === 'WILD DRAW') {
-        const activeColor = card.chosenColor || card.color;
-        if (activeColor) {
-            return `card_${activeColor.toLowerCase()}`;
-        }
-        return 'card_wild';
+        return chosenColor ? `card_${chosenColor.toLowerCase()}` : 'card_wild';
     }
 
     if (card.color) {
         return `card_${card.color.toLowerCase()}`;
     }
+
     return 'card_default';
 }
 

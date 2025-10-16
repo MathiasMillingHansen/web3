@@ -1,5 +1,5 @@
 
-import { Card } from "./card";
+import { Card, Color } from "./card";
 import { Deck } from "./deck";
 import { Hand } from "./hand";
 
@@ -37,7 +37,8 @@ class Round {
     hands: Hand[] = [];
     discardPile: Card[] = [];
     currentPlayer: number = 0;
-    direction: 1 | -1 = 1; 
+    direction: 1 | -1 = 1;
+    topColor: Color | undefined; // Color chosen by player for WILD or WILD DRAW
 
     get playerCount(): number {
         return this.players.length;
@@ -52,7 +53,7 @@ class Round {
         if (index < 0 || index >= this.players.length) throw new Error(`Player index out of bounds: ${index}`);
         return this.hands[index];
     }
-     
+
     setup(playerNames: string[], deck: Deck, handSize = 7) {
         if (playerNames.length < Round.MIN_PLAYERS || playerNames.length > Round.MAX_PLAYERS) {
             throw new Error('Invalid number of players');
@@ -74,6 +75,7 @@ class Round {
         } while (firstCard && (firstCard.type === 'WILD' || firstCard.type === 'WILD DRAW'));
         if (!firstCard) throw new Error('Deck exhausted before starting');
         this.discardPile = [firstCard];
+        this.topColor = firstCard.color;
         this.currentPlayer = (this.dealer) % this.players.length;
         this.direction = 1;
     }
@@ -103,92 +105,69 @@ class Round {
         return this.discardPile[this.discardPile.length - 1];
     }
 
-    canPlay(index: number, colorOverride?: string): boolean {
+    canPlay(index: number): boolean {
         if (index < 0 || index >= this.hands.length) return false;
         const hand = this.playerHand(index);
         const card = hand.getCards()[0];
         if (!card) return false;
-        return this.isPlayable(card, colorOverride, hand.getCards());
+        return this.isPlayable(card, hand.getCards(), );
     }
 
-    isPlayable(card: Card, colorOverride?: string, hand?: Card[]): boolean {
-        const top = this.topCard;
-        let activeColor: string | undefined = colorOverride;
-        if (!activeColor && (top.type === 'WILD' || top.type === 'WILD DRAW')) {
-            activeColor = (top as any).chosenColor;
-        }
-        if (!activeColor && 'color' in top) {
-            activeColor = (top as any).color;
-        }
+    isPlayable(card: Card, hand: Card[]): boolean {
+        switch (card.type)
+        {
+            case 'WILD': {
+                return true;
+            }
 
-        if (card.type === 'WILD DRAW' && hand) {
-            console.log('Validating WILD DRAW card:', {
-                activeColor,
-                handSize: hand.length,
-                topCard: this.topCard
-            });
-            
-            const hasPlayable = hand.some(c => {
-                if (c === card) return false; // Don't count the wild draw card itself
-                const isPlayable = this.isPlayable(c, activeColor, hand.filter(x => x !== card));
-                const isWild = ['WILD', 'WILD DRAW'].includes(c.type);
-                console.log(`Card ${c.type} ${(c as any).color || 'no-color'}: playable=${isPlayable}, isWild=${isWild}`);
-                return isPlayable && !isWild;
-            });
-            
-            console.log('Has other playable non-wild cards:', hasPlayable);
-            if (hasPlayable) return false;
-            return true;
-        }
+            case 'WILD DRAW': {
+                // From rules: "You can only play this card when you don't have a card
+                // in your hand that matches the color of the card previously played."
+                if (!hand.some(c => 'color' in c && c.color === this.topColor)) return true;
+            } break;
 
-        if (card.type === 'WILD') return true;
+            case 'REVERSE':
+            case 'SKIP':
+            case 'DRAW': {
+                if (this.topCard.type === card.type) return true;
+                if (this.topColor === card.color) return true;
+            } break;
 
-        if (top.type === 'WILD' || top.type === 'WILD DRAW') {
-            if ('color' in card && card.color === activeColor) return true;
-            if (['WILD', 'WILD DRAW'].includes(card.type)) return true;
-            return false;
-        }
-
-        if (['REVERSE', 'SKIP', 'DRAW'].includes(card.type)) {
-            if ('color' in card && card.color === activeColor) return true;
-            if (card.type === top.type) return true;
-            return false;
-        }
-
-        if (card.type === 'NUMBERED') {
-            if ('color' in card && card.color === activeColor) return true;
-            if (top.type === 'NUMBERED' && card.number === top.number) return true;
-            return false;
+            case 'NUMBERED': {
+                if (this.topCard.type === 'NUMBERED' && this.topCard.number === card.number) return true;
+                if (this.topColor === card.color) return true;
+            } break;
         }
 
         return false;
     }
 
-    play(index: number, color?: string): boolean {
+    play(index: number, chosenColor?: Color): boolean {
         if (index < 0 || index >= this.hands[this.currentPlayer].getCards().length) return false;
         const hand = this.hands[this.currentPlayer];
         const card = hand.getCards()[index];
         if (!card) return false;
-        
-        const validationColor = card.type === 'WILD DRAW' ? undefined : color;
-        
+
         console.log('Validating card play:', {
             cardType: card.type,
-            chosenColor: color,
-            validationColor,
+            chosenColor,
             currentTopCard: this.topCard.type,
-            currentTopColor: (this.topCard as any).color || (this.topCard as any).chosenColor
+            currentTopColor: this.topColor,
         });
-        
-        if (!this.isPlayable(card, validationColor, hand.getCards())) return false;
-        
-        if (card.type === 'WILD' || card.type === 'WILD DRAW') {
-            (card as any).chosenColor = color;
+
+        if (!this.isPlayable(card, hand.getCards())) return false;
+
+        if ('color' in card) {
+            if (chosenColor != undefined) throw new Error(`Cannot choose color for card type ${card.type}`);
+            this.topColor = card.color;
+        } else {
+            if (chosenColor == undefined) throw new Error(`Must choose color for card type ${card.type}`);
+            this.topColor = chosenColor;
         }
-        
+
         if (!hand.remove(card)) return false;
         this.discardPile.push(card);
-        
+
         switch (card.type) {
             case 'REVERSE':
                 if (this.players.length === 2) {
@@ -213,9 +192,9 @@ class Round {
                 this.drawCard();
                 this.drawCard();
                 this.drawCard();
-                break;    
-        }  
-        
+                break;
+        }
+
         this.nextPlayer();
         return true;
     }

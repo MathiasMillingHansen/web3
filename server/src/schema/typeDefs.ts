@@ -22,6 +22,7 @@ export const typeDefs = gql`
     players: [Player!]!
     currentPlayer: Int!
     topCard: Card
+    topColor: String
     direction: Int!
     status: String!
   }
