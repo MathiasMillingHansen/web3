@@ -4,3 +4,4 @@
 /.github
 /server/node_modules
 /server/dist
+/server/database.json

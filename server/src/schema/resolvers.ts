@@ -5,36 +5,78 @@ import { isColor } from '../models/card';
 import { Player } from '../models/player';
 import { Hand } from '../models/hand';
 import { standardShuffler } from '../utils/random_utils';
+import * as fs from 'fs';
+import * as path from 'path';
+
+type Database = {
+  gameIdCounter: number;
+  games: Map<string, Round>;
+}
+
+function saveDatabase(path: string, db: Database) {
+    const object = {
+      gameIdCounter: db.gameIdCounter,
+      games: Array.from(db.games.entries()).map(([id, game]) => ({ id, game }))
+    }
+    const json = JSON.stringify(object, null, 2);
+    fs.writeFileSync(path, json, 'utf8');
+}
+
+function loadDatabase(path: string): Database {
+    const db = {
+      gameIdCounter: 1,
+      games: new Map<string, Round>()
+    }
+
+    if (!fs.existsSync(path)) return db
+
+    const json = fs.readFileSync(path, 'utf8');
+    const object = JSON.parse(json);
+
+    db.gameIdCounter = object.gameIdCounter;
+    for (const { id, game } of object.games) {
+        const round = Object.assign(new Round(), game);
+        round.deck = Object.assign(new Deck(), round.deck);
+        for (let i = 0; i < round.hands.length; i++) {
+            round.hands[i] = Object.assign(new Hand(), round.hands[i]);
+        }
+        db.games.set(id, round);
+    }
+
+    return db;
+}
 
 const pubsub = new PubSub();
 
-const games = new Map<string, Round>();
-let gameIdCounter = 1;
+const DATABASE_FILE = 'database.json';
+
+const db = loadDatabase(DATABASE_FILE);
 
 function gameChanged(gameId: string)
 {
-  let game = games.get(gameId);
+  let game = db.games.get(gameId);
   if (!game) return;
 
   let formatted = formatGame(gameId, game);
 
   pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: formatted });
+  saveDatabase(DATABASE_FILE, db);
 }
 
 export const resolvers = {
   Query: {
     game: (_: any, { id, playerId }: { id: string; playerId?: string }) => {
-      const game = games.get(id);
+      const game = db.games.get(id);
       if (!game) throw new Error('Game not found');
       return formatGame(id, game);
     },
 
     games: () => {
-      return Array.from(games.entries()).map(([id, game]) => formatGame(id, game));
+      return Array.from(db.games.entries()).map(([id, game]) => formatGame(id, game));
     },
 
     playerHand: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
 
       const playerIndex = parseInt(playerId);
@@ -49,7 +91,7 @@ export const resolvers = {
 
   Mutation: {
     createGame: (_: any, { playerNames }: { playerNames: string[] }) => {
-      const gameId = (gameIdCounter++).toString();
+      const gameId = (db.gameIdCounter++).toString();
       const round = new Round();
 
       // For single player games, just set up the lobby structure without dealing cards
@@ -62,14 +104,13 @@ export const resolvers = {
         round.setup(playerNames, deck, 7);
       }
 
-      games.set(gameId, round);
-
+      db.games.set(gameId, round);
       gameChanged(gameId);
       return { id: gameId };
     },
 
     joinGame: (_: any, { gameId, playerName }: { gameId: string; playerName: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
 
       if (game.players.length >= 5) {
@@ -100,7 +141,7 @@ export const resolvers = {
     },
 
     startGame: (_: any, { gameId }: { gameId: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
 
       if (game.players.length < 2) {
@@ -125,7 +166,7 @@ export const resolvers = {
       cardIndex: number;
       color?: string
     }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
 
       const playerIndex = parseInt(playerId);
@@ -164,7 +205,7 @@ export const resolvers = {
     },
 
     drawCard: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
 
       const playerIndex = parseInt(playerId);
@@ -190,7 +231,7 @@ export const resolvers = {
     },
 
     declareUno: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
       const playerIndex = parseInt(playerId);
       const status = game.sayUno(playerIndex);
@@ -205,7 +246,7 @@ export const resolvers = {
     },
 
     catchUno: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
-      const game = games.get(gameId);
+      const game = db.games.get(gameId);
       if (!game) throw new Error('Game not found');
       const playerIndex = parseInt(playerId);
 
