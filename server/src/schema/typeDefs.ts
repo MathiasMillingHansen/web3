@@ -10,11 +10,9 @@ export const typeDefs = gql`
   }
 
   type Card {
-    id: ID!
     type: String!
     color: String
     number: Int
-    chosenColor: String
   }
 
   type Game {
@@ -27,6 +25,12 @@ export const typeDefs = gql`
     status: String!
   }
 
+  type GameResponse {
+    id: ID!
+    playerId: ID
+    status: Boolean
+  }
+
   type Query {
     game(id: ID!, playerId: ID): Game
     games: [Game!]!
@@ -34,13 +38,13 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    createGame(playerNames: [String!]!): Game!
-    joinGame(gameId: ID!, playerName: String!): Game!
-    startGame(gameId: ID!): Game!
-    playCard(gameId: ID!, playerId: ID!, cardIndex: Int!, color: String): Game!
-    drawCard(gameId: ID!, playerId: ID!): Game!
-    declareUno(gameId: ID!, playerId: ID!): Game!
-    catchUno(gameId: ID!, playerId: ID!): Game!
+    createGame(playerNames: [String!]!): GameResponse!
+    joinGame(gameId: ID!, playerName: String!): GameResponse!
+    startGame(gameId: ID!): GameResponse!
+    playCard(gameId: ID!, playerId: ID!, cardIndex: Int!, color: String): GameResponse!
+    drawCard(gameId: ID!, playerId: ID!): GameResponse!
+    declareUno(gameId: ID!, playerId: ID!): GameResponse!
+    catchUno(gameId: ID!, playerId: ID!): GameResponse!
   }
 
   type Subscription {

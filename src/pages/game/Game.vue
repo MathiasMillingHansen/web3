@@ -263,7 +263,6 @@ async function playCard(index, color = null) {
         }
 
         const result = await playCardMutation(variables);
-
         console.log('Card played successfully:', result);
     } catch (error) {
         console.error('Error playing card:', error);

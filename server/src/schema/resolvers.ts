@@ -11,6 +11,16 @@ const pubsub = new PubSub();
 const games = new Map<string, Round>();
 let gameIdCounter = 1;
 
+function gameChanged(gameId: string)
+{
+  let game = games.get(gameId);
+  if (!game) return;
+
+  let formatted = formatGame(gameId, game);
+
+  pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: formatted });
+}
+
 export const resolvers = {
   Query: {
     game: (_: any, { id, playerId }: { id: string; playerId?: string }) => {
@@ -54,10 +64,8 @@ export const resolvers = {
 
       games.set(gameId, round);
 
-      const gameData = formatGame(gameId, round);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
-
-      return gameData;
+      gameChanged(gameId);
+      return { id: gameId };
     },
 
     joinGame: (_: any, { gameId, playerName }: { gameId: string; playerName: string }) => {
@@ -86,10 +94,9 @@ export const resolvers = {
 
       console.log(`Player ${playerName} joined game ${gameId}. Now ${game.players.length} players.`);
 
-      const gameData = formatGame(gameId, game);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
-
-      return gameData;
+      let playerId = game.players.length - 1;
+      gameChanged(gameId);
+      return { id: gameId, playerId: playerId};
     },
 
     startGame: (_: any, { gameId }: { gameId: string }) => {
@@ -108,17 +115,8 @@ export const resolvers = {
         game.setup(game.players, deck, 7);
       }
 
-      const gameData = formatGame(gameId, game);
-
-      console.log('Publishing game update:', {
-        gameId,
-        status: gameData.status,
-        players: gameData.players.length
-      });
-
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
-
-      return gameData;
+      gameChanged(gameId);
+      return { status: true };
     },
 
     playCard: (_: any, { gameId, playerId, cardIndex, color }: {
@@ -161,10 +159,8 @@ export const resolvers = {
       });
       if (!success) throw new Error('Invalid move');
 
-      const gameData = formatGame(gameId, game);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
-
-      return gameData;
+      gameChanged(gameId);
+      return { status: true };
     },
 
     drawCard: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
@@ -189,10 +185,8 @@ export const resolvers = {
 
       game.nextPlayer();
 
-      const gameData = formatGame(gameId, game);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
-
-      return gameData;
+      gameChanged(gameId);
+      return { status: true };
     },
 
     declareUno: (_: any, { gameId, playerId }: { gameId: string; playerId: string }) => {
@@ -203,8 +197,7 @@ export const resolvers = {
 
       console.log(`Player ${playerIndex} declared UNO in game ${gameId}`);
 
-      const gameData = formatGame(gameId, game);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
+      gameChanged(gameId);
       return {
         id: gameId,
         status
@@ -220,8 +213,7 @@ export const resolvers = {
 
       console.log(`Player ${playerIndex} caught an opponent not saying UNO in game ${gameId}`);
 
-      const gameData = formatGame(gameId, game);
-      pubsub.publish(`GAME_UPDATED_${gameId}`, { gameUpdated: gameData });
+      gameChanged(gameId);
       return {
         id: gameId,
         status

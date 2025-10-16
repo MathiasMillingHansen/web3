@@ -36,7 +36,7 @@
                     </div>
                     <p :class="styles.share_text">Friends can join using this Game ID</p>
                 </div>
-                
+
                 <!-- Player configuration -->
                 <div :class="styles.player_config_section">
                     <h3 :class="styles.h3">Configure Players ({{ currentPlayerCount }}/5)</h3>
@@ -78,14 +78,14 @@
             <div :class="styles.join_game_section">
                 <h3 :class="styles.h3">Enter Game ID:</h3>
                 <div :class="styles.join_input_container">
-                    <input 
-                        v-model="joinGameId" 
-                        :class="styles.game_id_input" 
+                    <input
+                        v-model="joinGameId"
+                        :class="styles.game_id_input"
                         placeholder="Enter Game ID"
                         @keyup.enter="joinExistingGame"
                     />
-                    <button 
-                        :class="styles.join_button" 
+                    <button
+                        :class="styles.join_button"
                         @click="joinExistingGame"
                         :disabled="!joinGameId.trim() || joiningGame"
                     >
@@ -118,7 +118,7 @@
                     </div>
                     <p :class="styles.share_text">Share this with more friends!</p>
                 </div>
-                
+
                 <!-- Players in lobby -->
                 <div :class="styles.player_config_section">
                     <h3 :class="styles.h3">Players in Game ({{ totalPlayers }}/5)</h3>
@@ -193,17 +193,17 @@ watch(subscriptionResult, (newResult) => {
     console.log('Current game mode:', gameMode.value);
     console.log('Current player ID:', currentPlayerId.value);
     console.log('Game status:', newResult.gameUpdated.status);
-    
+
     // Update lobby players if in lobby mode
     if (gameMode.value === 'lobby' || gameMode.value === 'create') {
       lobbyPlayers.value = newResult.gameUpdated.players;
-      
+
       // Check if game has started (transition from setup to game)
       if (newResult.gameUpdated.status === 'PLAYING') {
         console.log('Game started! Navigating to game page...');
-        console.log('Navigation params:', { 
-          gameId: createdGameId.value, 
-          playerId: currentPlayerId.value 
+        console.log('Navigation params:', {
+          gameId: createdGameId.value,
+          playerId: currentPlayerId.value
         });
         // Navigate to game page for all players
         router.push({
@@ -234,22 +234,22 @@ async function createInitialGame() {
     try {
         // Create game with just the player (other players will join later)
         const playerNames = [playerName.value.trim()];
-        
+
         console.log('Creating initial game with players:', playerNames);
-        
+
         const result = await createGame({
             playerNames
         });
-        
+
         if (result?.data?.createGame?.id) {
             const gameId = result.data.createGame.id;
             console.log('Initial game created with ID:', gameId);
-            
+
             // Store the game ID and show the create screen (host can configure)
             createdGameId.value = gameId;
             currentPlayerId.value = '0'; // Host is always player 0
             gameMode.value = 'create';
-            
+
             // Start subscription for real-time updates
             startGameSubscription();
         }
@@ -288,12 +288,12 @@ async function joinCreatedGame() {
     try {
         // Call startGame mutation to officially start the game for all players
         console.log('Host starting game:', createdGameId.value);
-        
+
         const result = await startGame({
             gameId: createdGameId.value
         });
-        
-        if (result?.data?.startGame) {
+
+        if (result?.data?.startGame.success) {
             console.log('Game started successfully');
             // Navigation will happen automatically via subscription when status becomes 'PLAYING'
         }
@@ -306,28 +306,24 @@ async function joinCreatedGame() {
 async function joinExistingGame() {
     try {
         joinGameError.value = '';
-        
+
         const result = await joinGame({
             gameId: joinGameId.value.trim(),
             playerName: playerName.value.trim()
         });
-        
+
         if (result?.data?.joinGame?.id) {
             const gameId = result.data.joinGame.id;
             console.log('Successfully joined game:', gameId);
-            
-            // Find the player's ID in the joined game
-            const players = result.data.joinGame.players;
-            const playerIndex = players.findIndex(p => p.name === playerName.value.trim());
-            
+
             // Set up lobby state for joined player
             createdGameId.value = gameId;
-            currentPlayerId.value = playerIndex.toString();
+            currentPlayerId.value = result.data.joinGame.playerId.toString();
             gameMode.value = 'lobby'; // New lobby state for joined players
-            
+
             // Load current game state for lobby display
             await loadGameState();
-            
+
             // Start subscription for real-time updates
             startGameSubscription();
         }
@@ -347,7 +343,7 @@ async function loadGameState() {
                 playerId: currentPlayerId.value
             }
         });
-        
+
         if (data?.game) {
             lobbyPlayers.value = data.game.players;
         }
@@ -368,16 +364,16 @@ function startGameSubscription() {
         console.log('No game ID available for subscription');
         return;
     }
-    
+
     console.log('Starting subscription for game:', createdGameId.value);
     console.log('Current subscription state:', {
         enabled: subscriptionEnabled.value,
         gameId: subscriptionGameId.value
     });
-    
+
     subscriptionGameId.value = createdGameId.value;
     subscriptionEnabled.value = true;
-    
+
     console.log('Updated subscription state:', {
         enabled: subscriptionEnabled.value,
         gameId: subscriptionGameId.value
