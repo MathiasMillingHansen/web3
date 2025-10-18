@@ -38,9 +38,9 @@ class Deck {
         return this.cards.length;
     }
 
-    filter(aaaaaaaaa: (a: Card) => boolean): Deck {
+    filter(condition: (a: Card) => boolean): Deck {
         let newDeck = new Deck();
-        newDeck.cards = this.cards.filter(aaaaaaaaa);
+        newDeck.cards = this.cards.filter(condition);
         return newDeck;
     }
 

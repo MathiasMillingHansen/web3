@@ -143,6 +143,7 @@ const game = computed(() => {
     }
     return gameResult.value?.game;
 });
+
 const players = computed(() => game.value?.players || []);
 const currentPlayer = computed(() => game.value?.currentPlayer || 0);
 const topCard = computed(() => game.value?.topCard);
