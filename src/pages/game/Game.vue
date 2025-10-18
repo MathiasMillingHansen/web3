@@ -1,31 +1,24 @@
 <template>
     <div :class="styles.game_container">
-        <!-- Loading State -->
-        <div v-if="gameLoading" :class="styles.loading">
+        <div v-if="appState === 'loading'" :class="styles.loading">
             <h2>Loading game...</h2>
         </div>
 
-        <!-- Error State -->
-        <div v-else-if="gameError" :class="styles.error">
+        <div v-else-if="appState === 'error'" :class="styles.error">
             <h2>Error loading game</h2>
             <p>{{ gameError.message }}</p>
         </div>
 
-        <!-- Game Content -->
-        <template v-else-if="game">
+        <template v-else-if="appState === 'game'">
             <!-- Deck Area -->
             <div :class="styles.deck_area">
                 <h3>Top Card</h3>
-                <div v-if="topCard" :class="[styles.deck, styles[getCardColorClass(topCard, game.topColor)]]">
-                    {{ formatCard(topCard) }}
-                </div>
-                <div v-else :class="[styles.deck, styles.card_default]">
-                    No cards
+                <div :class="topCardDisplay.classes">
+                    {{ topCardDisplay.text }}
                 </div>
 
-                <!-- Draw Card Button -->
-                <button @click="drawCard" :disabled="!isMyTurn || drawingCard" :class="styles.draw_button">
-                    {{ drawingCard ? 'Drawing...' : 'Draw Card' }}
+                <button @click="drawCard" :disabled="drawButtonConfig.disabled" :class="styles.draw_button">
+                    {{ drawButtonConfig.text }}
                 </button>
 
                 <button @click="sayUno(currentUserId)" :class="styles.draw_button">
@@ -35,9 +28,8 @@
 
             <!-- Player Area -->
             <div :class="styles.player_area">
-                <h2 :class="styles.h2">
-                    <span v-if="!isMyTurn" style="color: #999;">Waiting for turn</span>
-                    <span v-else style="color: #4CAF50;">Your turn!</span>
+                <h2 :class="[styles.h2, styles[turnStatusConfig.class]]">
+                    {{ turnStatusConfig.text }}
                 </h2>
 
                 <!-- Player Hand Cards -->
@@ -77,17 +69,13 @@
                 </div>
 
                 <!-- Win Modal -->
-                <div v-if="gameWinner" :class="styles.win_modal_overlay">
+                <div v-if="winModalConfig" :class="styles.win_modal_overlay">
                     <div :class="styles.win_modal">
                         <div :class="styles.win_content">
                             <h2>🎉 Game Over! 🎉</h2>
-                            <div v-if="gameWinner.id === currentUserId" :class="styles.win_message">
-                                <h3>🏆 Congratulations! You Won! 🏆</h3>
-                                <p>Great job! You've won this UNO game!</p>
-                            </div>
-                            <div v-else :class="styles.lose_message">
-                                <h3>{{ gameWinner.name }} Won!</h3>
-                                <p>Better luck next time!</p>
+                            <div :class="styles[winModalConfig.class]">
+                                <h3>{{ winModalConfig.title }}</h3>
+                                <p>{{ winModalConfig.message }}</p>
                             </div>
                             <div :class="styles.win_actions">
                                 <button :class="styles.back_to_setup_button" @click="goBackToSetup">
@@ -129,11 +117,10 @@ import { GET_GAME, PLAY_CARD, DRAW_CARD, DECLARE_UNO, CATCH_UNO, GAME_UPDATED } 
 const route = useRoute();
 const router = useRouter();
 const gameId = route.query.gameId;
-const currentUserId = route.query.playerId; // Get actual player ID from route
+const currentUserId = route.query.playerId;
 
 console.log('Game page - Player ID:', currentUserId, 'Game ID:', gameId);
 
-// GraphQL queries and mutations
 const { result: gameResult, loading: gameLoading, error: gameError } = useQuery(GET_GAME, {
     id: gameId,
     playerId: currentUserId
@@ -146,13 +133,10 @@ const { mutate: drawCardMutation, loading: drawingCard } = useMutation(DRAW_CARD
 const { mutate: declareUnoMutation } = useMutation(DECLARE_UNO);
 const { mutate: catchUnoMutation } = useMutation(CATCH_UNO);
 
-// Add subscription for real-time updates
 const { result: subscriptionResult } = useSubscription(GAME_UPDATED, {
     gameId: gameId
 });
 
-// Computed properties from GraphQL data
-// Use subscription data when available, fallback to initial query
 const game = computed(() => {
     if (subscriptionResult.value?.gameUpdated) {
         return subscriptionResult.value.gameUpdated;
@@ -170,17 +154,59 @@ const playerHand = computed(() => {
 
 const isMyTurn = computed(() => currentPlayer.value.toString() === currentUserId);
 
-// Win detection - check if any player has 0 cards
 const gameWinner = computed(() => {
     if (!players.value || players.value.length === 0) return null;
-
     const winner = players.value.find(player => player.handSize === 0);
     return winner || null;
 });
 
-// Color selection state for wild cards
 const showColorSelector = ref(false);
 const selectedCardIndex = ref(null);
+
+const appState = computed(() => {
+    if (gameLoading.value) return 'loading';
+    if (gameError.value) return 'error';
+    if (game.value) return 'game';
+    return 'empty';
+});
+
+const turnStatusConfig = computed(() => {
+    return isMyTurn.value 
+        ? { text: 'Your turn!', class: 'my_turn' }
+        : { text: 'Waiting for turn', class: 'waiting_turn' };
+});
+
+const topCardDisplay = computed(() => {
+    if (!topCard.value) {
+        return { 
+            text: 'No cards', 
+            classes: [styles.deck, styles.card_default] 
+        };
+    }
+    
+    return {
+        text: formatCard(topCard.value),
+        classes: [styles.deck, styles[getCardColorClass(topCard.value, game.value?.topColor)]]
+    };
+});
+
+const winModalConfig = computed(() => {
+    if (!gameWinner.value) return null;
+    
+    const isWinner = gameWinner.value.id === currentUserId;
+    return {
+        title: isWinner ? '🏆 Congratulations! You Won! 🏆' : `${gameWinner.value.name} Won!`,
+        message: isWinner ? "Great job! You've won this UNO game!" : 'Better luck next time!',
+        class: isWinner ? 'win_message' : 'lose_message'
+    };
+});
+
+const drawButtonConfig = computed(() => {
+    return {
+        text: drawingCard.value ? 'Drawing...' : 'Draw Card',
+        disabled: !isMyTurn.value || drawingCard.value
+    };
+});
 
 function handleCardClick(card, index) {
     if (!isMyTurn.value || playingCard.value) {
@@ -257,7 +283,6 @@ async function playCard(index, color = null) {
             cardIndex: index
         };
 
-        // Add color parameter if provided (for wild cards)
         if (color) {
             variables.color = color;
         }
@@ -335,14 +360,12 @@ onMounted(() => {
     console.log('Loading game with ID:', gameId);
 });
 
-// Watch for game updates and log them
 watch(game, (newGame) => {
     if (newGame) {
         console.log('Game updated:', newGame);
     }
 }, { deep: true });
 
-// Watch for subscription updates and log them
 watch(subscriptionResult, (newResult) => {
     if (newResult?.gameUpdated) {
         console.log('Game updated via subscription:', newResult.gameUpdated);

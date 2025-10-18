@@ -80,6 +80,14 @@
     font-weight: bold;
 }
 
+.my_turn {
+    color: #4CAF50;
+}
+
+.waiting_turn {
+    color: #999;
+}
+
 .deck {
     width: 4vw;
     height: 12vh;
