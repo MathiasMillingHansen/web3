@@ -121,8 +121,6 @@ class Round {
             }
 
             case 'WILD DRAW': {
-                // From rules: "You can only play this card when you don't have a card
-                // in your hand that matches the color of the card previously played."
                 if (!hand.some(c => 'color' in c && c.color === this.topColor)) return true;
             } break;
 
