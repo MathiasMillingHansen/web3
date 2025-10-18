@@ -247,10 +247,9 @@ async function createInitialGame() {
 
             // Store the game ID and show the create screen (host can configure)
             createdGameId.value = gameId;
-            currentPlayerId.value = '0'; // Host is always player 0
+            currentPlayerId.value = '0'; 
             gameMode.value = 'create';
 
-            // Start subscription for real-time updates
             startGameSubscription();
         }
     } catch (error) {
@@ -286,7 +285,6 @@ function copyGameId() {
 
 async function joinCreatedGame() {
     try {
-        // Call startGame mutation to officially start the game for all players
         console.log('Host starting game:', createdGameId.value);
 
         const result = await startGame({
@@ -295,7 +293,6 @@ async function joinCreatedGame() {
 
         if (result?.data?.startGame.success) {
             console.log('Game started successfully');
-            // Navigation will happen automatically via subscription when status becomes 'PLAYING'
         }
     } catch (error) {
         console.error('Error starting game:', error);
@@ -321,10 +318,8 @@ async function joinExistingGame() {
             currentPlayerId.value = result.data.joinGame.playerId.toString();
             gameMode.value = 'lobby'; // New lobby state for joined players
 
-            // Load current game state for lobby display
             await loadGameState();
 
-            // Start subscription for real-time updates
             startGameSubscription();
         }
     } catch (error) {
@@ -353,8 +348,6 @@ async function loadGameState() {
 }
 
 function leaveGame() {
-    // TODO: Implement leave game mutation on server
-    // For now, just go back to main menu
     stopGameSubscription();
     goBack();
 }
